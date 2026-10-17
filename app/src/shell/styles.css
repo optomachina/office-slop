@@ -933,3 +933,30 @@ small {
 }
 
 .screen-office .office-scene { min-height: 0; }
+
+/* Flow layout reserves separate space for capacity, attention and replay. */
+.screen-office {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 245px;
+  grid-template-rows: auto 110px minmax(0, 1fr) auto;
+  gap: 12px 16px;
+  padding: 0 28px 24px;
+}
+.screen-office .office-header { position: static; grid-column: 1 / -1; padding: 18px 0; }
+.screen-office .capacity-toolbar { position: static; grid-column: 1 / -1; height: auto; min-width: 0; }
+.screen-office .world { position: relative; inset: auto; grid-row: 3; grid-column: 1; min-height: 0; }
+.screen-office .work-panels { position: static; grid-row: 3; grid-column: 2; width: auto; max-height: none; min-height: 0; align-content: start; }
+.screen-office .replay-bar { position: static; grid-column: 1 / -1; }
+.screen-office .modal-backdrop { position: fixed; }
+@media (max-width: 600px) {
+  .screen-office {
+    height: 100dvh; min-height: 0; overflow: auto;
+    padding: 0 12px 12px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 100px minmax(260px, 40dvh) auto auto;
+  }
+  .screen-office .office-header { padding: 13px 0; }
+  .screen-office .world { grid-column: 1; }
+  .screen-office .work-panels { grid-column: 1; grid-row: 4; overflow: visible; }
+  .screen-office .replay-bar { grid-row: 5; }
+}

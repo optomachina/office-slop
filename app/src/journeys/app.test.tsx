@@ -4,9 +4,11 @@ import { act, cleanup, render, screen, within, waitFor } from '@testing-library/
 import userEvent from '@testing-library/user-event';
 import type { SceneProps } from '../contracts';
 import App from '../shell/App';
+import { sceneLabels } from '../scene/layout';
+import { selectScene } from '../scene/selectors';
 
-vi.mock('../scene/OfficeScene', () => ({ default: ({ reducedMotion, onSelect }: SceneProps) =>
-  <div aria-label="Office scene">{reducedMotion ? 'Scene motion reduced' : 'Scene motion enabled'}<button onClick={() => onSelect('robot-moss')}>Scene robot</button><button onClick={() => onSelect('issue-onboarding')}>Scene card</button><button onClick={() => onSelect('dispatch')}>Scene dispatch</button><button onClick={() => onSelect('station:build')}>Scene station</button></div>,
+vi.mock('../scene/OfficeScene', () => ({ default: ({ state, reducedMotion, onSelect }: SceneProps) =>
+  <div aria-label="Office scene">{sceneLabels(selectScene(state).stations, state.providers).filter(label => label.id.startsWith('station:')).map(label => <button key={label.id} onClick={() => onSelect(label.id)}>{label.text}</button>)}{reducedMotion ? 'Scene motion reduced' : 'Scene motion enabled'}<button onClick={() => onSelect('robot-moss')}>Scene robot</button><button onClick={() => onSelect('issue-onboarding')}>Scene card</button><button onClick={() => onSelect('dispatch')}>Scene dispatch</button><button onClick={() => onSelect('station:build')}>Scene station</button></div>,
 }));
 beforeEach(() => localStorage.clear());
 afterEach(() => cleanup());
@@ -92,7 +94,7 @@ describe('Milestone A user journeys', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Reduced motion' }));
     await user.click(screen.getByRole('button', { name: 'Close dialog' }));
     await user.click(screen.getByRole('button', { name: /^Continue/ }));
-    expect(screen.getByText('Scene motion reduced')).toBeTruthy();
+    expect(await screen.findByText('Scene motion reduced')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Options' }));
     expect((screen.getByRole('checkbox', { name: 'Reduced motion' }) as HTMLInputElement).checked).toBe(true);
   });
@@ -243,11 +245,11 @@ it('defaults motion from OS while retaining explicit override', async () => {
  vi.stubGlobal('matchMedia',vi.fn(()=>({matches:true})));
  try {
   const user=userEvent.setup(); render(<App/>);
-  expect(screen.getByText('Scene motion reduced')).toBeTruthy();
+  expect(await screen.findByText('Scene motion reduced')).toBeTruthy();
   await user.click(screen.getByRole('button',{name:/Options/}));
   await user.click(screen.getByRole('checkbox',{name:'Reduced motion'}));
   cleanup(); render(<App/>);
-  expect(screen.getByText('Scene motion enabled')).toBeTruthy();
+  expect(await screen.findByText('Scene motion enabled')).toBeTruthy();
  } finally {vi.unstubAllGlobals();}
 });
 it('labels stale capacity and shows robot linked issue and stage', async () => {
@@ -278,4 +280,20 @@ it('separates manual pause from replay and retains repeated digest events', asyn
   expect(within(screen.getByRole('dialog')).getByText(new RegExp(`Dispatch ${i===1?'resume':'pause'} requested`))).toBeTruthy();
   await user.click(screen.getByRole('button',{name:'Close dialog'}));
  }
+});
+
+it('keeps capacity and blockers accessible while station counts stay in the directory', async () => {
+ const user = await enter();
+ await user.click(screen.getByRole('button', {name:/Cursor capacity:/}));
+ expect(within(screen.getByRole('dialog')).getByRole('heading', {name:'Cursor'})).toBeTruthy();
+ await user.keyboard('{Escape}');
+ await user.click(screen.getAllByRole('button', {name:/Jump to blocker:/})[0]);
+ expect(screen.getByRole('dialog', {name:'Work inspector'})).toBeTruthy();
+ await user.keyboard('{Escape}');
+ await user.selectOptions(screen.getByLabelText('DEMO STORY'), 'load');
+ await user.click(screen.getByText(/Work directory/));
+ expect(screen.getByRole('button', {name:'BUILD LAB · 25'})).toBeTruthy();
+ expect(screen.queryByText(/grouped/)).toBeNull();
+ await user.click(screen.getByRole('button', {name:'BUILD LAB · 25'}));
+ expect(within(screen.getByRole('dialog')).getByText(/25 cards/)).toBeTruthy();
 });

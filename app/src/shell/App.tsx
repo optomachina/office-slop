@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useOfficeAudio } from "../audio/useOfficeAudio";
 import { createLoadState } from "../fixtures/load";
 import { workflowDefinition } from "../domain/workflow";
 import { selectScene } from "../scene/selectors";
-import OfficeScene from "../scene/OfficeScene";
 import { createInitialState, reduceEvent, scenarios, issueProgress, setPause, resolveHold } from "../domain";
 import type { GameState, IdeaBrief, Options } from "../contracts";
 import "./styles.css";
@@ -16,6 +15,8 @@ import {
   audiences,
 } from "./storage";
 import Leaderboard from "./Leaderboard";
+
+const OfficeScene = lazy(() => import("../scene/OfficeScene"));
 export default function App() {
   const [state, setState] = useState<GameState>(createInitialState),
     [screen, setScreen] = useState<"menu" | "interview" | "office">("menu"),
@@ -198,12 +199,14 @@ export default function App() {
   return (
     <div className={`game-app screen-${screen} ${options.reducedMotion ? "reduced-motion" : ""}`}>
       <div className="world">
-        <OfficeScene
-          state={state}
-          reducedMotion={options.reducedMotion}
-          selectedId={selected}
-          onSelect={screen === "office" ? select : () => {}}
-        />
+        <Suspense fallback={<p role="status">Loading office…</p>}>
+          <OfficeScene
+            state={state}
+            reducedMotion={options.reducedMotion}
+            selectedId={selected}
+            onSelect={screen === "office" ? select : () => {}}
+          />
+        </Suspense>
       </div>
       {screen === "menu" && (
         <main className="menu-screen">

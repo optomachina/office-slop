@@ -326,13 +326,16 @@ it('stacks mobile attention, directory and usable replay after the two-column ta
 });
 
 it('shows a retryable fallback when the office scene chunk fails and keeps the rest of the office usable', async () => {
- const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
  const error=vi.spyOn(console,'error').mockImplementation(()=>{});
- const load=vi.spyOn(sceneLoader,'load').mockRejectedValueOnce(new Error('Failed to fetch dynamically imported module'));
+ const failure=new Error('Failed to fetch dynamically imported module');
+ const report=vi.spyOn(sceneLoader,'report');
+ const load=vi.spyOn(sceneLoader,'load').mockRejectedValueOnce(failure);
  try {
   const user=await enter();
   const alert=await screen.findByRole('alert');
   expect(within(alert).getByText('The office floor could not load.')).toBeTruthy();
+  expect(report).toHaveBeenCalledWith(failure);
+  expect(error).toHaveBeenCalledWith('Office scene failed to load', failure);
   expect(screen.queryByLabelText('Office scene')).toBeNull();
   expect(within(screen.getByRole('region',{name:'Simulated provider capacity'})).getAllByRole('button')).toHaveLength(4);
   const launcher=screen.getByRole('button',{name:/^Needs you \d/});
@@ -344,5 +347,25 @@ it('shows a retryable fallback when the office scene chunk fails and keeps the r
   expect(await screen.findByLabelText('Office scene')).toBeTruthy();
   expect(screen.queryByRole('alert')).toBeNull();
   expect(load).toHaveBeenCalledTimes(2);
- } finally { load.mockRestore(); warn.mockRestore(); error.mockRestore(); }
+ } finally { load.mockRestore(); report.mockRestore(); error.mockRestore(); }
+});
+
+it('offers Reload page when retrying the office scene fails again', async () => {
+ const error=vi.spyOn(console,'error').mockImplementation(()=>{});
+ const report=vi.spyOn(sceneLoader,'report');
+ const reload=vi.spyOn(sceneLoader,'reload').mockImplementation(()=>{});
+ const load=vi.spyOn(sceneLoader,'load').mockRejectedValue(new Error('Failed to fetch dynamically imported module'));
+ try {
+  const user=await enter();
+  await user.click(within(await screen.findByRole('alert')).getByRole('button',{name:'Retry loading office'}));
+  await waitFor(()=>expect(load).toHaveBeenCalledTimes(2));
+  const alert=await screen.findByRole('alert');
+  const reloadButton=await within(alert).findByRole('button',{name:'Reload page'});
+  expect(within(alert).queryByRole('button',{name:'Retry loading office'})).toBeNull();
+  expect(report).toHaveBeenCalledTimes(2);
+  expect(within(screen.getByRole('region',{name:'Simulated provider capacity'})).getAllByRole('button')).toHaveLength(4);
+  await user.click(reloadButton);
+  expect(reload).toHaveBeenCalledTimes(1);
+  expect(load).toHaveBeenCalledTimes(2);
+ } finally { load.mockRestore(); reload.mockRestore(); report.mockRestore(); error.mockRestore(); }
 });

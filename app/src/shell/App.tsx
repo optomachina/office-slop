@@ -203,7 +203,7 @@ export default function App() {
   return (
     <div className={`game-app screen-${screen} ${options.reducedMotion ? "reduced-motion" : ""}`}>
       <div className="world">
-        <SceneBoundary key={sceneAttempt} onRetry={() => setSceneAttempt((n) => n + 1)}>
+        <SceneBoundary key={sceneAttempt} retried={sceneAttempt > 0} onRetry={() => setSceneAttempt((n) => n + 1)}>
           <Suspense fallback={<p className="scene-loading" role="status">Loading office…</p>}>
             <OfficeScene
               state={state}

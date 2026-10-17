@@ -1,0 +1,25 @@
+{
+  "name": "office-slop-repo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Office Slop repository tooling: pstack agent contract, gates and preflight. The app lives in app/.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "npm --prefix app run typecheck",
+    "test": "node --test scripts/*-test.mjs scripts/lib/*-test.mjs",
+    "test:app": "npm --prefix app test",
+    "build": "npm --prefix app run build",
+    "preflight": "bash scripts/preflight.sh",
+    "agent-contract": "node scripts/validate-agent-contract.mjs",
+    "sensitive-paths:report": "node scripts/sensitive-paths-report.mjs",
+    "sensitive-paths:render": "node scripts/lib/sensitive-paths.mjs render-agents",
+    "review-gate": "node scripts/review-gate.mjs",
+    "journey-tests:check": "node scripts/check-journey-tests.mjs"
+  },
+  "devDependencies": {
+    "picomatch": "^4.0.2"
+  }
+}

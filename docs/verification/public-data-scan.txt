@@ -1,0 +1,29 @@
+AGENTS.md:18: named owner
+AGENTS.md:23: named owner
+AGENTS.md:29: named owner
+AGENTS.md:58: named owner
+AGENTS.md:62: named owner
+planning/kickoff.md:7: private conversation URL
+planning/opus-development-plan.md:3: private conversation URL
+pstack.config.json:5: named owner
+references/inspection.md:3: personal path
+references/inspection.md:5: personal path
+references/inspection.md:15: private conversation URL
+references/jev-current.md:39: personal path
+references/jev-current.md:40: personal path
+references/jev-current.md:41: personal path
+references/jev-current.md:42: personal path
+references/jev-current.md:59: personal path
+references/jev-smoke.json:1: personal path
+references/pstack-research.md:5: personal path
+scripts/check-journey-tests.node-test.mjs:111: synthetic test email
+scripts/check-journey-tests.node-test.mjs:112: synthetic test email
+scripts/gate-workflows.node-test.mjs:29: synthetic test email
+scripts/lib/sensitive-paths.node-test.mjs:84: synthetic test email
+scripts/review-gate.node-test.mjs:32: synthetic test email
+scripts/review-gate.node-test.mjs:38: synthetic test email
+scripts/review-gate.node-test.mjs:141: local test URL
+scripts/review-gate.node-test.mjs:146: synthetic test credential
+scripts/review-gate.node-test.mjs:147: local test URL
+scripts/review-gate.node-test.mjs:152: synthetic test credential
+scripts/sensitive-paths-report.node-test.mjs:17: synthetic test email

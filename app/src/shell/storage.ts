@@ -1,6 +1,11 @@
 import type { IdeaBrief, Options } from "../contracts";
-export const KEY = "office-slop-save-v1";
-export const PREF = "office-slop-options-v1";
+export const KEY = "slop-farm-save-v1";
+export const PREF = "slop-farm-options-v1";
+// Saves written before the Office Slop -> Slop Farm rename stay readable.
+const LEGACY: Record<string, string> = {
+  [KEY]: "office-slop-save-v1",
+  [PREF]: "office-slop-options-v1",
+};
 export const defaults: Options = {
   muted: true,
   volume: 0.2,
@@ -10,7 +15,10 @@ export const defaults: Options = {
 };
 export function read(key: string) {
   try {
-    return JSON.parse(localStorage.getItem(key) || "null");
+    const legacy = LEGACY[key];
+    return JSON.parse(
+      localStorage.getItem(key) ?? (legacy ? localStorage.getItem(legacy) : null) ?? "null",
+    );
   } catch {
     return null;
   }

@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import type { SceneProps } from '../contracts';
 import App from '../shell/App';
 import officeStyles from '../shell/styles.css?raw';
+import indexHtml from '../../index.html?raw';
 import { sceneLabels } from '../scene/layout';
 import { selectScene } from '../scene/selectors';
 import { sceneLoader } from '../shell/sceneLoader';
@@ -104,7 +105,7 @@ describe('Milestone A user journeys', () => {
   it('exposes historical provenance without inventing activity', async () => {
     const user = await enter();
     await user.click(screen.getByText(/Work directory/));
-    await user.click(screen.getByRole('button', { name: /Historical: Office Slop/ }));
+    await user.click(screen.getByRole('button', { name: /Historical: Slop Farm/ }));
     const dialog = screen.getByRole('dialog', { name: 'Work inspector' });
     expect(within(dialog).getByText(/Imported from planning\/opus-development-plan.md/)).toBeTruthy();
   });
@@ -345,4 +346,18 @@ it('shows a retryable fallback when the office scene chunk fails and keeps the r
   expect(screen.queryByRole('alert')).toBeNull();
   expect(load).toHaveBeenCalledTimes(2);
  } finally { load.mockRestore(); warn.mockRestore(); error.mockRestore(); }
+});
+
+it('shows the Slop Farm name on the main menu, footer and tab title, and keeps pre-rename saves', async () => {
+ localStorage.setItem('office-slop-save-v1', JSON.stringify({version:1,brief:{name:'Legacy factory',idea:'i',customer:'c',outcome:'o'},context:{}}));
+ render(<App />);
+ expect(screen.getByRole('heading', {level:1}).textContent).toBe('SLOPFARM');
+ expect(screen.getByText('SLOP FARM / 001')).toBeTruthy();
+ expect(screen.queryByText(/office slop/i)).toBeNull();
+ expect(screen.getByRole('button', {name:/Continue.*Saved factory/})).toBeTruthy();
+});
+
+it('names the app Slop Farm in the HTML title', () => {
+ expect(indexHtml).toContain('<title>Slop Farm — Your little code factory</title>');
+ expect(indexHtml).not.toMatch(/office slop/i);
 });

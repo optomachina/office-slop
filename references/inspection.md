@@ -2,7 +2,7 @@
 
 Shared skills are accessible at `<shared skills checkout>`. Verified Codex symlinks for plan, writing-plans, grilling, and agent-orchestrator-linear. Inspected those instructions plus overnight-run. No installers, launchers, credential wrappers or sessions were changed.
 
-OverDrafter checkout: `<OverDrafter checkout>`; local HEAD `087af3177977276196a9fbbeb9da24e6f39d183a`. Read AGENTS.md, docs/agent-development-control-plane.md and docs/agent-graph-metrics.md. Its ownership, durable evidence and independent verification rules are useful inputs, not authorization to implement Office Slop.
+OverDrafter checkout: `<OverDrafter checkout>`; local HEAD `087af3177977276196a9fbbeb9da24e6f39d183a`. Read AGENTS.md, docs/agent-development-control-plane.md and docs/agent-graph-metrics.md. Its ownership, durable evidence and independent verification rules are useful inputs, not authorization to implement Slop Farm.
 
 GitHub connector verified PR 799 open and unmerged at head `56e95d6756671400ed8e11bc4ffa354f7f6da173`. Local Git object at that head supplied the graph snapshot. Version `1.0.0-draft.3`; README explicitly says runtimes are not wired. Sonnet and Codex review fan out from Jev; Opus is conditional on risk/sensitive paths; Grok is overflow; QA must not author. CI-to-QA handoff is report mode. The graph and older AGENTS reviewer sizing differ; resolve the effective contract before live integration, not by silently choosing either. No active runtime/controller ownership was inferred or taken over.
 

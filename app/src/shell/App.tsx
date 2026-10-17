@@ -219,9 +219,9 @@ export default function App() {
           <div className="menu-copy">
             <p className="eyebrow">SMALL ROBOTS. REAL AMBITION.</p>
             <h1>
-              OFFICE
+              SLOP
               <br />
-              <span>SLOP</span>
+              <span>FARM</span>
             </h1>
             <p className="menu-description">
               Your idea. Their little desks.
@@ -254,7 +254,7 @@ export default function App() {
             <small>Explore the office. Meet the crew. Make a plan.</small>
           </div>
           <footer className="menu-footer">
-            <span>OFFICE SLOP / 001</span>
+            <span>SLOP FARM / 001</span>
             <button onClick={() => open("leaderboard")}>
               Visit the leaderboard ↗
             </button>

@@ -916,3 +916,9 @@ small {
   .work-panels { top: 185px; right: 15px; width: 170px; }
   .work-list > div { max-height: 120px; }
 }
+
+.reduced-motion *, .reduced-motion *::before, .reduced-motion *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}

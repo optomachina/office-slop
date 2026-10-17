@@ -5,8 +5,8 @@ import userEvent from '@testing-library/user-event';
 import type { SceneProps } from '../contracts';
 import App from '../shell/App';
 
-vi.mock('../scene/OfficeScene', () => ({ default: ({ reducedMotion }: SceneProps) =>
-  <div aria-label="Office scene">{reducedMotion ? 'Scene motion reduced' : 'Scene motion enabled'}</div>,
+vi.mock('../scene/OfficeScene', () => ({ default: ({ reducedMotion, onSelect }: SceneProps) =>
+  <div aria-label="Office scene">{reducedMotion ? 'Scene motion reduced' : 'Scene motion enabled'}<button onClick={() => onSelect('robot-moss')}>Scene robot</button><button onClick={() => onSelect('issue-onboarding')}>Scene card</button><button onClick={() => onSelect('station:build')}>Scene station</button></div>,
 }));
 beforeEach(() => localStorage.clear());
 afterEach(() => cleanup());
@@ -103,4 +103,126 @@ describe('Milestone A user journeys', () => {
     const dialog = screen.getByRole('dialog', { name: 'Work inspector' });
     expect(within(dialog).getByText(/Imported from planning\/opus-development-plan.md/)).toBeTruthy();
   });
+});
+
+describe('Slice 2 journeys', () => {
+  it('plays, pauses, steps, resets and selects a load scenario', async () => {
+    const user = await enter();
+    await user.selectOptions(screen.getByLabelText('DEMO STORY'), 'reconnect');
+    await user.click(screen.getByRole('button', {name:'Play replay'}));
+    await waitFor(() => expect(screen.getByText('1 / 4 events')).toBeTruthy(), {timeout:2200});
+    await user.click(screen.getByRole('button', {name:'Pause replay'}));
+    expect(screen.getByText('Synthetic source disconnected')).toBeTruthy();
+    await user.click(screen.getByRole('button', {name:'Next event'}));
+    expect(screen.getByText('2 / 4 events')).toBeTruthy();
+    await user.click(screen.getByRole('button', {name:'Restart replay'}));
+    expect(screen.getByText('0 / 4 events')).toBeTruthy();
+    expect(screen.getByText('Synthetic source connected')).toBeTruthy();
+    await user.selectOptions(screen.getByLabelText('DEMO STORY'), 'load');
+    await user.click(screen.getByText(/Work directory/));
+    expect(screen.getByText('200 issues')).toBeTruthy();
+    await user.click(screen.getByRole('button', {name:/^Intake station/}));
+    expect(within(screen.getByRole('dialog')).getByText('25 cards · 3 robots')).toBeTruthy();
+  });
+  it('jumps to a blocker and shows only changes since the previous digest view', async () => {
+    const user = await enter();
+    await user.click(screen.getByRole('button', {name:/^Needs you \d/}));
+    expect(screen.getByRole('heading', {name:'Since last view'})).toBeTruthy();
+    expect(screen.getByText(/Billing: 1 of 2/)).toBeTruthy();
+    await user.click(screen.getByRole('button', {name:'Close dialog'}));
+    await user.click(screen.getByRole('button', {name:/^Needs you \d/}));
+    expect(screen.getByText('No new changes since your last view.')).toBeTruthy();
+    await user.click(screen.getByRole('button', {name:'Close dialog'}));
+    await user.selectOptions(screen.getByLabelText('DEMO STORY'), 'repair');
+    await user.click(screen.getByRole('button', {name:'Next event'}));
+    await user.click(screen.getByRole('button', {name:/Jump to blocker: Give every robot/}));
+    expect(within(screen.getByRole('dialog')).getByText('changes_requested')).toBeTruthy();
+    await user.click(screen.getByRole('button', {name:'Close dialog'}));
+    await user.click(screen.getByRole('button', {name:/^Needs you \d/}));
+    expect(screen.getByText(/\[fixture · repair-1\]/)).toBeTruthy();
+  });
+  it('persists mute and volume across remounts with AudioContext unavailable', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', {name:/Options/}));
+    await user.click(screen.getByRole('button', {name:'Ambient office hum'}));
+    const { fireEvent } = await import('@testing-library/react');
+    fireEvent.change(screen.getByRole('slider', {name:'Volume'}), {target:{value:'0.55'}});
+    cleanup();
+    render(<App />);
+    await user.click(screen.getByRole('button', {name:/Options/}));
+    expect(screen.getByRole('button', {name:'Ambient office hum'}).getAttribute('aria-pressed')).toBe('true');
+    expect((screen.getByRole('slider', {name:'Volume'}) as HTMLInputElement).value).toBe('0.55');
+    await user.click(screen.getByRole('button', {name:'Ambient office hum'}));
+    cleanup();
+    render(<App />);
+    await user.click(screen.getByRole('button', {name:/Options/}));
+    expect(screen.getByRole('button', {name:'Ambient office hum'}).getAttribute('aria-pressed')).toBe('false');
+  });
+});
+
+it('creates audio only after a gesture and closes it on unmount', async () => {
+  const resume = vi.fn().mockResolvedValue(undefined);
+  const close = vi.fn().mockResolvedValue(undefined);
+  const stop = vi.fn();
+  const construct = vi.fn();
+  class Context {
+    currentTime=0; destination={}; resume=resume; close=close;
+    constructor(){ construct(); }
+    createGain(){return {gain:{value:0,setTargetAtTime:vi.fn()},connect:vi.fn()};}
+    createOscillator(){return {type:'sine',frequency:{value:0},connect:vi.fn(),start:vi.fn(),stop};}
+  }
+  vi.stubGlobal('AudioContext', Context);
+  try {
+    const user=userEvent.setup();
+    const view=render(<App />);
+    expect(construct).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button',{name:/Options/}));
+    expect(construct).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button',{name:'Ambient office hum'}));
+    expect(construct).toHaveBeenCalledTimes(1);
+    expect(resume).toHaveBeenCalled();
+    view.unmount();
+    expect(stop).toHaveBeenCalledTimes(3);
+    expect(close).toHaveBeenCalledTimes(1);
+  } finally {vi.unstubAllGlobals();}
+});
+
+it('uses the same inspector for scene and DOM selections', async () => {
+ const user=await enter();
+ await user.click(screen.getByRole('button',{name:'Scene robot'}));
+ expect(within(screen.getByRole('dialog')).getByRole('heading',{name:'Moss'})).toBeTruthy();
+ expect(within(screen.getByRole('dialog')).getByText(/Queued for busy desk/)).toBeTruthy();
+ await user.click(screen.getByRole('button',{name:'Close dialog'}));
+ await user.click(screen.getByRole('button',{name:'Scene card'}));
+ expect(within(screen.getByRole('dialog')).getByRole('heading',{name:'Turn a spark into a product brief'})).toBeTruthy();
+ await user.click(screen.getByRole('button',{name:'Close dialog'}));
+ await user.click(screen.getByRole('button',{name:'Scene station'}));
+ expect(within(screen.getByRole('dialog')).getByRole('heading',{name:'build station'})).toBeTruthy();
+});
+
+it('restores the original launcher after jumping from Needs You to an inspector', async () => {
+ const user=await enter();
+ const launcher=screen.getByRole('button',{name:/^Needs you \d/});
+ await user.click(launcher);
+ await user.click(screen.getByRole('button',{name:/Inspect related work/}));
+ await user.keyboard('{Escape}');
+ await waitFor(()=>expect(document.activeElement).toBe(launcher));
+});
+
+it('pans, zooms and resets the real DOM camera controls with keyboard and buttons', async () => {
+ const {OfficeViewport}=await vi.importActual<typeof import('../scene/OfficeViewport')>('../scene/OfficeViewport');
+ const camera={pan:vi.fn(),zoom:vi.fn(),reset:vi.fn()};
+ const user=userEvent.setup();
+ render(<OfficeViewport camera={camera}/>);
+ screen.getByRole('region').focus();
+ await user.keyboard('{ArrowLeft}{ArrowDown}+-0');
+ expect(camera.pan.mock.calls).toEqual([[30,0],[0,-30]]);
+ expect(camera.zoom.mock.calls).toEqual([[1.15],[.85]]);
+ expect(camera.reset).toHaveBeenCalledTimes(1);
+ await user.click(screen.getByRole('button',{name:'Zoom in'}));
+ await user.click(screen.getByRole('button',{name:'Zoom out'}));
+ await user.click(screen.getByRole('button',{name:'Fit office'}));
+ expect(camera.zoom).toHaveBeenCalledTimes(4);
+ expect(camera.reset).toHaveBeenCalledTimes(2);
 });

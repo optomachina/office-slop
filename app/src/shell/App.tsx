@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useOfficeAudio } from "../audio/useOfficeAudio";
+import { createLoadState } from "../fixtures/load";
+import { workflowDefinition } from "../domain/workflow";
+import { selectScene } from "../scene/selectors";
 import OfficeScene from "../scene/OfficeScene";
 import { createInitialState, reduceEvent, scenarios, issueProgress, setPause, resolveHold } from "../domain";
 import type { GameState, IdeaBrief, Options } from "../contracts";
@@ -44,12 +48,13 @@ export default function App() {
     [playing, setPlaying] = useState(false),
     [limit, setLimit] = useState("25"),
     [manualPause, setManualPause] = useState<boolean | null>(null);
+  const [viewedLog, setViewedLog] = useState<string[]>([]);
+  const [digest, setDigest] = useState<string[]>([]);
+  const audio = useOfficeAudio(options.muted, options.volume);
   const sceneScenario =
     scenarios.find((s) => s.id === scenarioId) || scenarios[0];
   const returnFocus = useRef<HTMLElement | null>(null),
-    dialogRef = useRef<HTMLDivElement>(null),
-    audio = useRef<AudioContext | null>(null),
-    gain = useRef<GainNode | null>(null);
+    dialogRef = useRef<HTMLDivElement>(null);
   function persist() {
     try {
       localStorage.setItem(KEY, JSON.stringify({ version: 1, brief, context }));
@@ -64,8 +69,7 @@ export default function App() {
     } catch {
       /* Session preferences still work. */
     }
-    if (gain.current)
-      gain.current.gain.value = options.muted ? 0 : options.volume * 0.035;
+
   }, [options]);
   useEffect(() => {
     if (!playing || !sceneScenario) return;
@@ -139,53 +143,45 @@ export default function App() {
   function open(which: "options" | "leaderboard" | "needs") {
     returnFocus.current = document.activeElement as HTMLElement;
     setSelected(null);
+    if (which === "needs") {
+      setDigest(state.log.filter(line => !viewedLog.includes(line)));
+      setViewedLog([...state.log]);
+    }
     setModal(which);
   }
   function select(id: string) {
-    returnFocus.current = document.activeElement as HTMLElement;
+    if (!modal && !selected) returnFocus.current = document.activeElement as HTMLElement;
     setModal(null);
     setSelected(id);
   }
   function enter(save = false) {
+    audio.start();
     if (save) persist();
     setScreen("office");
     setReveal(true);
   }
   function sound() {
-    if (!audio.current) {
-      try {
-        const a = new AudioContext(),
-          g = a.createGain(),
-          osc = a.createOscillator();
-        osc.type = "sine";
-        osc.frequency.value = 110;
-        osc.connect(g);
-        g.connect(a.destination);
-        g.gain.value = 0.007;
-        osc.start();
-        audio.current = a;
-        gain.current = g;
-      } catch {
-        setNotice("Audio unavailable; the office works silently.");
-        return;
-      }
-    }
-    void audio.current.resume();
+    audio.start();
     setOptions((o) => ({ ...o, muted: !o.muted }));
   }
   function reset(id = sceneScenario?.id) {
     setManualPause(null);
     setPlaying(false);
     setCursor(0);
-    setState(createInitialState());
+    setState(id === "load" ? createLoadState() : createInitialState());
+    setViewedLog([]);
+    setDigest([]);
+    setSelected(null);
     setScenarioId(id || "");
   }
   function step() {
+    setPlaying(false);
     if (sceneScenario && cursor < sceneScenario.events.length) {
       setState((s) => reduceEvent(s, sceneScenario.events[cursor]));
       setCursor((c) => c + 1);
     }
   }
+  const sceneFacts = selectScene(state);
   const holds = state.holds.filter((h) => !h.resolved),
     issue =
       state.issues.find((i) => i.id === selected) ||
@@ -200,7 +196,7 @@ export default function App() {
     robot = state.robots.find((r) => r.id === selected),
     prs = issue ? state.prs.filter((p) => issue.prIds.includes(p.id)) : [];
   return (
-    <div className="game-app">
+    <div className={`game-app ${options.reducedMotion ? "reduced-motion" : ""}`}>
       <div className="world">
         <OfficeScene
           state={state}
@@ -426,6 +422,8 @@ export default function App() {
               Work directory <span>{state.issues.length} issues</span>
             </summary>
             <div>
+              {Object.entries(workflowDefinition.stages).map(([id, station]) => <button key={id} onClick={() => select(`station:${id}`)}><span>{station.label} station</span><small>{state.issues.filter(i => i.stage === id).length} cards · {state.robots.filter(r => r.stage === id).length} robots</small></button>)}
+              <button onClick={() => select("station:capacity")}>Capacity station</button>
               {state.issues.map((i) => (
                 <button key={i.id} onClick={() => select(i.id)}>
                   <span>{i.title}</span>
@@ -434,7 +432,7 @@ export default function App() {
                   </small>
                 </button>
               ))}
-              {state.robots.map((r) => <button key={r.id} onClick={() => select(r.id)}><span>{r.name}</span><small>{r.role} · {r.stage}</small></button>)}
+              {state.robots.map((r) => <button key={r.id} onClick={() => select(r.id)}><span>{r.name}</span><small>{r.role} · {r.stage} · {sceneFacts.robots.find(bot => bot.id === r.id)?.queued ? "Queued for busy desk" : "At desk"}</small></button>)}
             </div>
           </details>
           </div>
@@ -459,6 +457,7 @@ export default function App() {
                   if (cursor >= sceneScenario.events.length) reset();
                   setPlaying(!playing);
                 }}
+                disabled={!sceneScenario.events.length}
                 aria-label={playing ? "Pause replay" : "Play replay"}
               >
                 {playing ? "Ⅱ" : "▶"}
@@ -546,7 +545,7 @@ export default function App() {
                   <h3>Sound & motion</h3>
                   <label className="toggle">
                     <span>Ambient office hum</span>
-                    <button aria-pressed={!options.muted} onClick={sound}>
+                    <button aria-label="Ambient office hum" aria-pressed={!options.muted} onClick={sound}>
                       {options.muted ? "Off" : "On"}
                     </button>
                   </label>
@@ -695,13 +694,13 @@ export default function App() {
                   </aside>
                 )}
                 {stuck.filter((i) => !holds.some((h) => h.issueId === i.id)).map((i) => <article className="hold" key={i.id}><h3>{i.title}</h3><p>Changes requested or failed check</p><button onClick={() => select(i.id)}>Jump to blocker</button></article>)}
-                <h3>Since this session began</h3>
+                <h3>Since last view</h3>
                 <ul className="digest">
-                  {state.log.length ? (
-                    state.log.slice(0, 6).map((l, i) => <li key={i}>{l}</li>)
+                  {digest.length ? (
+                    digest.map((l, i) => <li key={i}>{l}</li>)
                   ) : (
                     <li>
-                      The demo office is ready. Play a story to see changes.
+                      No new changes since your last view.
                     </li>
                   )}
                 </ul>
@@ -716,9 +715,10 @@ export default function App() {
                     provider?.name ||
                     "Workstation"}
                 </h2>
+                {selected.startsWith("station:") && <section><h3>{selected.slice(8)} station</h3><p>{state.issues.filter(i => i.stage === selected.slice(8)).length} cards · {state.robots.filter(r => r.stage === selected.slice(8)).length} robots</p>{state.issues.filter(i => i.stage === selected.slice(8)).map(i => <button key={i.id} onClick={() => select(i.id)}>{i.title}</button>)}{selected === "station:capacity" && state.providers.map(p => <button key={p.id} onClick={() => select(p.id)}>{p.name}: {p.state}</button>)}</section>}
                 {robot && (
                   <p>
-                    {robot.provider} · {robot.role}
+                    {robot.provider} · {robot.role} · {sceneFacts.robots.find(bot => bot.id === robot.id)?.queued ? "Queued for busy desk" : "At desk"}
                     <br />
                     <small>
                       Executor {robot.id} / activity {robot.activityId}

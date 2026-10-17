@@ -1,0 +1,16 @@
+import { describe,it,expect } from 'vitest';
+import { OfficeLayout, iso, gridPath, isWalkable, hitTest, stationSlots } from './layout';
+import { selectScene, CARD_LIMIT } from './selectors';
+import { createInitialState, reduceEvent, scenarios } from '../domain';
+import { createLoadState } from '../fixtures/load';
+
+describe('shared office navigation',()=>{
+ it('connects every station pair through walkable orthogonal steps and never a wall',()=>{
+  for(const from of OfficeLayout.stations)for(const to of OfficeLayout.stations){const path=gridPath(from.approach,to.approach);expect(path.length,`${from.id} to ${to.id}`).toBeGreaterThan(0);expect(path[0]).toEqual(from.approach);expect(path.at(-1)).toEqual(to.approach);path.forEach((p,i)=>{expect(isWalkable(p)).toBe(true);if(i){const prev=path[i-1];expect(Math.abs(p.x-prev.x)+Math.abs(p.y-prev.y)).toBe(.25);expect(isWalkable({x:(p.x+prev.x)/2,y:(p.y+prev.y)/2})).toBe(true);}});}
+ });
+ it('queues busy desks in distinct connected walkable slots',()=>{for(const station of OfficeLayout.stations){const slots=stationSlots(station.id,20);expect(slots).toHaveLength(20);expect(new Set(slots.map(p=>`${p.x},${p.y}`)).size).toBe(20);for(const slot of slots)expect(gridPath(station.approach,slot).length).toBeGreaterThan(0);}});
+ it('maps hits to the exact inspector IDs, including foreground priority',()=>{const targets=[{id:'station:build',x:1,y:1,radius:10},{id:'card-1',x:1,y:1,radius:2},{id:'robot-1',x:20,y:20,radius:2}];expect(hitTest(targets,{x:1,y:1})).toBe('card-1');expect(hitTest(targets,{x:5,y:1})).toBe('station:build');expect(hitTest(targets,{x:20,y:20})).toBe('robot-1');expect(hitTest(targets,{x:100,y:100})).toBeNull();});
+ it('uses rendered selection targets and distinct build desk approaches',()=>{const scene=selectScene(createInitialState());for(const target of scene.targets){expect(hitTest([target],target)).toBe(target.id);expect(hitTest([target],{x:target.x+target.radius+1,y:target.y})).toBeNull();}const build=OfficeLayout.stations.find(s=>s.id==='build')!;expect(stationSlots('build',2)).toEqual(build.anchors);expect(build.anchors[1].x-build.anchors[0].x).toBeGreaterThan(1);const card=scene.stations.flatMap(s=>s.cards)[0];expect(hitTest(scene.targets.filter(t=>t.id===card.id),iso(card.x,card.y,45))).toBe(card.id);});
+ it('replays scene selectors deterministically at every event',()=>{for(const scenario of scenarios){let a=createInitialState(),b=createInitialState();for(const event of scenario.events){a=reduceEvent(a,event);b=reduceEvent(b,structuredClone(event));expect(selectScene(a)).toEqual(selectScene(b));}}});
+ it('preserves 20 robot and 200 card identities and counts while aggregating excess cards',()=>{const state=createLoadState();const before=structuredClone(state);const scene=selectScene(state);expect(scene.robotCount).toBe(20);expect(scene.cardCount).toBe(200);expect(scene.robots).toHaveLength(20);expect(scene.stations.reduce((n,s)=>n+s.count,0)).toBe(200);expect(scene.stations.reduce((n,s)=>n+s.cards.length+s.excess,0)).toBe(200);expect(scene.stations.every(s=>s.cards.length<=CARD_LIMIT)).toBe(true);expect(new Set(scene.robots.map(r=>r.id)).size).toBe(20);expect(selectScene(state)).toEqual(scene);expect(state).toEqual(before);});
+});

@@ -2,6 +2,7 @@ import type { EvidenceEvent, Scenario } from '../contracts';
 
 const e = (id:string, at:number, type:EvidenceEvent['type'], entityId:string, payload:EvidenceEvent['payload']):EvidenceEvent => ({id,at,type,entityId,payload,source:'fixture'});
 export const scenarios:Scenario[] = [
+
   {id:'delivery',name:'A clean delivery',description:'Accepted issue enters planning and two distinct build activities, then moves through independent review and QA to a verified simulated merge.',events:[
     e('delivery-intake',0,'stage','issue-onboarding',{stage:'intake'}),
     e('delivery-plan',0,'stage','issue-onboarding',{stage:'planning'}),
@@ -19,6 +20,7 @@ export const scenarios:Scenario[] = [
     e('connect-1',1,'connection','fixture',{connected:false}),e('connect-2',2,'quota','codex',{state:'stale',level:0.62}),e('connect-3',3,'connection','fixture',{connected:true}),e('connect-4',4,'quota','codex',{state:'ok',level:0.58})]},
   {id:'partial',name:'One of two PRs',description:'Billing has two required linked PRs. One merge cannot complete the issue.',events:[
     e('partial-1',1,'stage','issue-billing',{stage:'qa'}),e('partial-2',2,'qa','pr-billing-ui',{head:'billing-ui-1',passed:false}),e('partial-3',3,'merge','pr-billing-ui',{head:'billing-ui-1'})]},
+  {id:"load",name:"Representative load (20 robots / 200 cards)",description:"Synthetic load rehearsal; counts and identities stay fixed during presentation.",events:[]},
   {id:'historical',name:'Historical imported story',description:'Historical — architecture consultation imported from planning/opus-development-plan.md (October 16, 2026). No live execution inferred.',events:[]},
   {id:'switch',name:'Dispatch switch',description:'Requested pause and effective pause remain separate until a simulated executor acknowledges the change.',events:[
     e('switch-1',1,'pause','dispatch',{requested:true}),e('switch-2',2,'pause','dispatch',{effective:true}),e('switch-3',3,'pause','dispatch',{requested:false}),e('switch-4',4,'pause','dispatch',{effective:false})]},

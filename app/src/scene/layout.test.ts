@@ -22,3 +22,5 @@ describe('scene presentation geometry',()=>{
  it('spaces provider tanks and dispatch separately',()=>{const anchors=providerAnchors(4);for(let i=1;i<anchors.length;i++)expect(anchors[i].x-anchors[i-1].x).toBeGreaterThanOrEqual(1.4);for(const anchor of anchors){const a=iso(anchor.x,anchor.y),b=iso(dispatchAnchor.x,dispatchAnchor.y);expect(Math.hypot(a.x-b.x,a.y-b.y)).toBeGreaterThan(50);}});
  it('snaps an unreachable robot to its target instead of leaving it stuck',()=>{const target=OfficeLayout.stations[0].approach;expect(robotRoute({x:-1,y:-1},target)).toEqual({path:[],position:target});});
 });
+
+it('keeps station and dispatch signs outside provider tank silhouettes',()=>{for(const state of [createInitialState(),createLoadState()]){const labels=sceneLabels(selectScene(state).stations,state.providers).filter(l=>l.id.startsWith('station:')||l.id==='dispatch');for(const anchor of providerAnchors(state.providers.length)){const p=iso(anchor.x,anchor.y);const tank={id:'tank',text:'',x:p.x,y:p.y-35,width:42,height:90,size:0,color:0};for(const label of labels)expect(rectanglesIntersect(label,tank),label.id).toBe(false);}}});

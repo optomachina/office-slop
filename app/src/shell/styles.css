@@ -953,10 +953,12 @@ small {
     height: 100dvh; min-height: 0; overflow: auto;
     padding: 0 12px 12px;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 100px minmax(260px, 40dvh) auto auto;
+    grid-template-rows: auto auto minmax(260px, 40dvh) auto auto;
+    align-content: start;
   }
   .screen-office .office-header { padding: 13px 0; }
+  .screen-office .capacity-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
   .screen-office .world { grid-column: 1; }
-  .screen-office .work-panels { grid-column: 1; grid-row: 4; overflow: visible; }
+  .screen-office .work-panels { grid-column: 1; grid-row: 4; min-height: auto; overflow: visible; }
   .screen-office .replay-bar { grid-row: 5; }
 }

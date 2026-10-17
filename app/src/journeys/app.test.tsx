@@ -4,6 +4,7 @@ import { act, cleanup, render, screen, within, waitFor } from '@testing-library/
 import userEvent from '@testing-library/user-event';
 import type { SceneProps } from '../contracts';
 import App from '../shell/App';
+import { readFileSync } from 'node:fs';
 import { sceneLabels } from '../scene/layout';
 import { selectScene } from '../scene/selectors';
 
@@ -296,4 +297,29 @@ it('keeps capacity and blockers accessible while station counts stay in the dire
  expect(screen.queryByText(/grouped/)).toBeNull();
  await user.click(screen.getByRole('button', {name:'BUILD LAB · 25'}));
  expect(within(screen.getByRole('dialog')).getByText(/25 cards/)).toBeTruthy();
+});
+
+it('stacks mobile attention, directory and usable replay after the two-column tanks', async () => {
+ const user = await enter();
+ const needs = screen.getByText('Needs You', {selector:'summary'}).closest('details')!;
+ const directory = screen.getByText(/Work directory/, {selector:'summary'}).closest('details')!;
+ const panels = needs.parentElement!;
+ const footer = screen.getByLabelText('DEMO STORY').closest('footer')!;
+ expect(panels.className).toBe('work-panels');
+ expect(directory.parentElement).toBe(panels);
+ expect(needs.nextElementSibling).toBe(directory);
+ expect(panels.nextElementSibling).toBe(footer);
+ expect(footer.className).toBe('replay-bar');
+ await user.click(within(directory).getByText(/Work directory/));
+ await user.click(screen.getByRole('button', {name:'Next event'}));
+ expect(screen.getByRole('button', {name:'Play replay'})).toBeTruthy();
+ expect(within(screen.getByRole('region', {name:'Simulated provider capacity'})).getAllByRole('button')).toHaveLength(4);
+ // jsdom has no layout: pin the flow rules as well as the real App structure.
+ const officeStyles = readFileSync('src/shell/styles.css', 'utf8');
+ expect(officeStyles).toContain('.screen-office .replay-bar { position: static;');
+ const mobile = officeStyles.slice(officeStyles.lastIndexOf('@media (max-width: 600px)'));
+ expect(mobile).toContain('grid-template-rows: auto auto minmax(260px, 40dvh) auto auto');
+ expect(mobile).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
+ expect(mobile).toContain('grid-row: 4; min-height: auto; overflow: visible');
+ expect(mobile).toContain('.screen-office .replay-bar { grid-row: 5; }');
 });

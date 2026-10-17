@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
+/// <reference types="vite/client" />
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SceneProps } from '../contracts';
 import App from '../shell/App';
-import { readFileSync } from 'node:fs';
+import officeStyles from '../shell/styles.css?raw';
 import { sceneLabels } from '../scene/layout';
 import { selectScene } from '../scene/selectors';
 
@@ -315,7 +316,6 @@ it('stacks mobile attention, directory and usable replay after the two-column ta
  expect(screen.getByRole('button', {name:'Play replay'})).toBeTruthy();
  expect(within(screen.getByRole('region', {name:'Simulated provider capacity'})).getAllByRole('button')).toHaveLength(4);
  // jsdom has no layout: pin the flow rules as well as the real App structure.
- const officeStyles = readFileSync('src/shell/styles.css', 'utf8');
  expect(officeStyles).toContain('.screen-office .replay-bar { position: static;');
  const mobile = officeStyles.slice(officeStyles.lastIndexOf('@media (max-width: 600px)'));
  expect(mobile).toContain('grid-template-rows: auto auto minmax(260px, 40dvh) auto auto');

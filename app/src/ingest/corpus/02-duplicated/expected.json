@@ -1,8 +1,53 @@
 {
   "entities": {
-    "github|synthetic-org|review|rev-9": { "kind": "review", "sourceVersion": "2026-10-02T09:00:00Z", "eventId": "d-1", "headSha": "bbbbbbb", "visibility": "public" },
-    "linear|synthetic-ws|issue|iss-1": { "kind": "stage", "sourceVersion": "2026-10-02T08:00:00Z", "eventId": "d-2", "headSha": null, "visibility": "private" }
+    "github|synthetic-org|1000001|review|rev-9": {
+      "source": "github",
+      "scope": {
+        "account": "synthetic-org",
+        "repoId": 1000001
+      },
+      "entity": {
+        "kind": "review",
+        "id": "rev-9"
+      },
+      "kind": "review",
+      "sourceVersion": "2026-10-02T09:00:00Z",
+      "eventId": "d-1",
+      "headSha": "bbbbbbb",
+      "visibility": "public",
+      "fetchedVia": [
+        "poll",
+        "webhook"
+      ],
+      "payload": {
+        "state": "APPROVED"
+      }
+    },
+    "linear|synthetic-ws|team-synthetic|issue|iss-1": {
+      "source": "linear",
+      "scope": {
+        "account": "synthetic-ws",
+        "linearTeamId": "team-synthetic"
+      },
+      "entity": {
+        "kind": "issue",
+        "id": "iss-1"
+      },
+      "kind": "stage",
+      "sourceVersion": "2026-10-02T08:00:00Z",
+      "eventId": "d-2",
+      "headSha": null,
+      "visibility": "private",
+      "fetchedVia": [
+        "poll"
+      ],
+      "payload": {
+        "state": "In Progress"
+      }
+    }
   },
+  "conflicts": [],
+  "rejected": [],
   "accepted": 2,
   "duplicates": 3,
   "stale": 0,

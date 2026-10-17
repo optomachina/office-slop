@@ -1,53 +1,77 @@
-// Corpus harness: raw lines -> validate -> dedupe -> per-entity version order -> projection.
-// Pure and order-independent, so a shuffled arrival must give the same projection.
-import { parseSourceEvent, type SourceEvent } from '../contract';
+// Pure corpus projection; canonical content and sorted output make arrival order irrelevant.
+import { parseSourceEvent, versionKey, type SourceEvent } from '../contract';
 
-export interface EntityProjection { kind: string; sourceVersion: string; eventId: string; headSha: string | null; visibility: string }
+export type EntityProjection = Pick<SourceEvent, 'source' | 'scope' | 'entity' | 'kind' | 'sourceVersion' | 'eventId' | 'visibility' | 'payload'> & { headSha: string | null; fetchedVia: string[] };
 export interface CorpusProjection {
   entities: Record<string, EntityProjection>;
-  accepted: number; // unique valid events
-  duplicates: number; // repeated eventIds ignored
-  stale: number; // valid events superseded by a newer sourceVersion
-  warnings: string[]; // sorted, so arrival order cannot change them
+  conflicts: { key: string; reason: string; eventIds: string[] }[];
+  rejected: { line: number; digest: string; reason: string }[];
+  accepted: number;
+  duplicates: number;
+  stale: number;
+  warnings: string[];
 }
-
-const MAX_LINE = 64 * 1024;
-
-/** Numeric versions compare as numbers, everything else lexically; ties break on eventId. */
-export function compareVersion(a: SourceEvent, b: SourceEvent): number {
-  const na = Number(a.sourceVersion), nb = Number(b.sourceVersion);
-  const byVersion = Number.isFinite(na) && Number.isFinite(nb) ? na - nb : a.sourceVersion < b.sourceVersion ? -1 : a.sourceVersion > b.sourceVersion ? 1 : 0;
-  return byVersion || (a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0);
+const keyOf = (e: SourceEvent) => `${e.source}|${e.scope.account}|${e.scope.repoId ?? e.scope.linearTeamId ?? '-'}|${e.entity.kind}|${e.entity.id}`;
+const cmp = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+function stable(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value).sort(([a], [b]) => cmp(a, b)).map(([key, v]) => [key, stable(v)]));
 }
-
+function digest(line: string): string {
+  let hash = 2166136261;
+  for (const byte of new TextEncoder().encode(line)) hash = Math.imul(hash ^ byte, 16777619);
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
 export function projectCorpus(lines: readonly string[]): CorpusProjection {
-  const warnings: string[] = [];
-  const seen = new Map<string, SourceEvent>();
-  let duplicates = 0;
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    if (line.length > MAX_LINE) { warnings.push('rejected: line over size cap'); continue; }
+  const rejected: CorpusProjection['rejected'] = [], conflicts: CorpusProjection['conflicts'] = [], warnings: string[] = [];
+  const seen = new Map<string, SourceEvent[]>();
+  lines.forEach((line, index) => {
+    const reject = (reason: string) => rejected.push({ line: index + 1, digest: digest(line), reason });
+    if (!line.trim()) { reject('empty record'); return; }
+    if (new TextEncoder().encode(line).length > 64 * 1024) { reject('line over size cap'); return; }
     let raw: unknown;
-    try { raw = JSON.parse(line); } catch { warnings.push('rejected: invalid JSON'); continue; }
+    try { raw = JSON.parse(line); } catch { reject('invalid JSON'); return; }
     const parsed = parseSourceEvent(raw);
-    if (!parsed.ok) { warnings.push(`rejected: ${parsed.reason}`); continue; }
-    if (parsed.warning) warnings.push(`kept: ${parsed.warning} (${parsed.event.eventId})`);
-    if (seen.has(parsed.event.eventId)) { duplicates++; continue; }
-    seen.set(parsed.event.eventId, parsed.event);
+    if (!parsed.ok) { reject(parsed.reason); return; }
+    const copies = seen.get(parsed.event.eventId) ?? [];
+    copies.push(parsed.event);
+    seen.set(parsed.event.eventId, copies);
+  });
+  const groups = new Map<string, { event: SourceEvent; fetchedVia: string[] }[]>();
+  let accepted = 0, duplicates = 0, stale = 0;
+  for (const [eventId, copies] of seen) {
+    const contents = new Set(copies.map(({ provenance: _provenance, ...event }) => JSON.stringify(stable(event))));
+    if (contents.size > 1) {
+      conflicts.push({ key: copies.map(keyOf).sort()[0], reason: 'same eventId, different content', eventIds: [eventId] });
+      continue;
+    }
+    accepted++;
+    duplicates += copies.length - 1;
+    const event = copies[0];
+    if (event.kind === 'unknown') { warnings.push(`kept: unknown event kind (${eventId})`); continue; }
+    const key = keyOf(event), group = groups.get(key) ?? [];
+    group.push({ event, fetchedVia: [...new Set(copies.map((e) => e.provenance.fetchedVia))].sort() });
+    groups.set(key, group);
   }
-  const latest = new Map<string, SourceEvent>();
-  let stale = 0;
-  for (const event of seen.values()) {
-    if (event.kind === 'unknown') continue; // kept in the log, never applied
-    const key = `${event.source}|${event.scope.account}|${event.entity.kind}|${event.entity.id}`;
-    const current = latest.get(key);
-    if (!current) latest.set(key, event);
-    else { stale++; if (compareVersion(event, current) > 0) latest.set(key, event); }
+  const entities: CorpusProjection['entities'] = {};
+  for (const key of [...groups.keys()].sort()) {
+    const group = groups.get(key)!;
+    const versions = group.map(({ event }) => versionKey(event.sourceVersion)!);
+    if (new Set(versions.map((v) => v.domain)).size > 1) {
+      conflicts.push({ key, reason: 'mixed version domains', eventIds: group.map(({ event }) => event.eventId).sort() });
+      continue;
+    }
+    const max = Math.max(...versions.map((v) => v.value));
+    const winners = group.filter((_, i) => versions[i].value === max);
+    stale += group.length - winners.length;
+    if (winners.length > 1) {
+      conflicts.push({ key, reason: 'version tie', eventIds: winners.map(({ event }) => event.eventId).sort() });
+      continue;
+    }
+    const { event: e, fetchedVia } = winners[0];
+    entities[key] = { source: e.source, scope: e.scope, entity: e.entity, kind: e.kind, sourceVersion: e.sourceVersion, eventId: e.eventId, headSha: e.headSha ?? null, visibility: e.visibility, fetchedVia, payload: stable(e.payload) as SourceEvent['payload'] };
   }
-  const entities: Record<string, EntityProjection> = {};
-  for (const key of [...latest.keys()].sort()) {
-    const e = latest.get(key)!;
-    entities[key] = { kind: e.kind, sourceVersion: e.sourceVersion, eventId: e.eventId, headSha: e.headSha ?? null, visibility: e.visibility };
-  }
-  return { entities, accepted: seen.size, duplicates, stale, warnings: warnings.sort() };
+  conflicts.sort((a, b) => cmp(a.key, b.key) || cmp(a.reason, b.reason));
+  rejected.sort((a, b) => cmp(a.digest, b.digest) || cmp(a.reason, b.reason) || a.line - b.line);
+  return { entities, conflicts, rejected, accepted, duplicates, stale, warnings: warnings.sort() };
 }

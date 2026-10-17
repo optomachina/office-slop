@@ -1,18 +1,73 @@
 {
   "entities": {
-    "github|synthetic-org|check|chk-55": { "kind": "check", "sourceVersion": "1", "eventId": "m-3", "headSha": "aaaaaaa", "visibility": "public" },
-    "github|synthetic-org|head|pr-7": { "kind": "head", "sourceVersion": "2026-10-01T10:00:00Z", "eventId": "m-1", "headSha": "aaaaaaa", "visibility": "public" }
+    "github|synthetic-org|1000001|head|pr-7": {
+      "source": "github",
+      "scope": {
+        "account": "synthetic-org",
+        "repoId": 1000001
+      },
+      "entity": {
+        "kind": "head",
+        "id": "pr-7"
+      },
+      "kind": "head",
+      "sourceVersion": "2026-10-01T10:00:00Z",
+      "eventId": "m-1",
+      "headSha": "aaaaaaa",
+      "visibility": "public",
+      "fetchedVia": [
+        "poll"
+      ],
+      "payload": {
+        "title": "Synthetic PR seven"
+      }
+    }
   },
-  "accepted": 2,
+  "conflicts": [],
+  "rejected": [
+    {
+      "line": 9,
+      "digest": "070afb1a",
+      "reason": "unknown field extraField"
+    },
+    {
+      "line": 8,
+      "digest": "0e806de2",
+      "reason": "unsupported schema version"
+    },
+    {
+      "line": 4,
+      "digest": "7dad1a8d",
+      "reason": "missing or unknown entity"
+    },
+    {
+      "line": 2,
+      "digest": "b741bc86",
+      "reason": "invalid JSON"
+    },
+    {
+      "line": 5,
+      "digest": "cc0a9a09",
+      "reason": "bad headSha"
+    },
+    {
+      "line": 3,
+      "digest": "d3b8659b",
+      "reason": "scope.repoId must be an integer id"
+    },
+    {
+      "line": 6,
+      "digest": "fc05eb85",
+      "reason": "invalid JSON"
+    },
+    {
+      "line": 7,
+      "digest": "ffcaaa85",
+      "reason": "not an object"
+    }
+  ],
+  "accepted": 1,
   "duplicates": 0,
   "stale": 0,
-  "warnings": [
-    "rejected: bad headSha",
-    "rejected: invalid JSON",
-    "rejected: invalid JSON",
-    "rejected: missing or unknown entity",
-    "rejected: not an object",
-    "rejected: scope.repoId must be an integer id",
-    "rejected: unsupported schema version"
-  ]
+  "warnings": []
 }

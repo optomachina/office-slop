@@ -1,11 +1,96 @@
 {
   "entities": {
-    "github|synthetic-org|check|chk-11": { "kind": "check", "sourceVersion": "2", "eventId": "o-4", "headSha": "cccc222", "visibility": "public" },
-    "github|synthetic-org|head|pr-11": { "kind": "head", "sourceVersion": "2026-10-03T12:00:00Z", "eventId": "o-2", "headSha": "cccc222", "visibility": "public" },
-    "linear|synthetic-ws|issue|iss-2": { "kind": "stage", "sourceVersion": "2026-10-03T10:00:00Z", "eventId": "o-5", "headSha": null, "visibility": "private" }
+    "github|synthetic-org|1000001|check|chk-11": {
+      "source": "github",
+      "scope": {
+        "account": "synthetic-org",
+        "repoId": 1000001
+      },
+      "entity": {
+        "kind": "check",
+        "id": "chk-11"
+      },
+      "kind": "check",
+      "sourceVersion": "2",
+      "eventId": "o-4",
+      "headSha": "cccc222",
+      "visibility": "public",
+      "fetchedVia": [
+        "poll"
+      ],
+      "payload": {
+        "conclusion": "success"
+      }
+    },
+    "github|synthetic-org|1000001|head|pr-11": {
+      "source": "github",
+      "scope": {
+        "account": "synthetic-org",
+        "repoId": 1000001
+      },
+      "entity": {
+        "kind": "head",
+        "id": "pr-11"
+      },
+      "kind": "head",
+      "sourceVersion": "2026-10-03T12:00:00Z",
+      "eventId": "o-2",
+      "headSha": "cccc222",
+      "visibility": "public",
+      "fetchedVia": [
+        "poll"
+      ],
+      "payload": {}
+    },
+    "github|synthetic-org|1000002|head|pr-11": {
+      "source": "github",
+      "scope": {
+        "account": "synthetic-org",
+        "repoId": 1000002
+      },
+      "entity": {
+        "kind": "head",
+        "id": "pr-11"
+      },
+      "kind": "head",
+      "sourceVersion": "2026-10-03T08:00:00Z",
+      "eventId": "o-8",
+      "headSha": "dddd111",
+      "visibility": "public",
+      "fetchedVia": [
+        "poll"
+      ],
+      "payload": {}
+    },
+    "linear|synthetic-ws|team-synthetic|issue|iss-2": {
+      "source": "linear",
+      "scope": {
+        "account": "synthetic-ws",
+        "linearTeamId": "team-synthetic"
+      },
+      "entity": {
+        "kind": "issue",
+        "id": "iss-2"
+      },
+      "kind": "stage",
+      "sourceVersion": "2026-10-03T10:00:00Z",
+      "eventId": "o-5",
+      "headSha": null,
+      "visibility": "private",
+      "fetchedVia": [
+        "poll"
+      ],
+      "payload": {
+        "state": "In Review"
+      }
+    }
   },
-  "accepted": 7,
+  "conflicts": [],
+  "rejected": [],
+  "accepted": 9,
   "duplicates": 0,
-  "stale": 3,
-  "warnings": ["kept: unknown event kind (o-7)"]
+  "stale": 4,
+  "warnings": [
+    "kept: unknown event kind (o-7)"
+  ]
 }

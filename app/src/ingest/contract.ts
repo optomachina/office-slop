@@ -23,7 +23,7 @@ export interface SourceEvent {
   kind: EventKind;
   occurredAt: string | null; // source time; may be wrong or skewed
   observedAt: string; // ingest time (logical clock in tests)
-  sourceVersion: string; // updated_at / head sha / check attempt / Linear updatedAt
+  sourceVersion: string; // unsigned integer or zoned ISO timestamp
   headSha?: string; // binds review/check evidence to a head
   payload: Record<string, PayloadValue>;
   provenance: { url?: string; fetchedVia: (typeof FETCHED_VIA)[number]; generation?: string };
@@ -38,27 +38,57 @@ const oneOf = <T extends readonly string[]>(list: T, v: unknown): v is T[number]
 const MAX_PAYLOAD_KEYS = 32;
 const MAX_TEXT = 500;
 
+const unknownField = (value: Record<string, unknown>, allowed: string, prefix = '') => {
+  const key = Object.keys(value).sort().find((key) => !allowed.split(',').includes(key));
+  return key === undefined ? null : { ok: false as const, reason: `unknown field ${prefix}${key}` };
+};
+
+export function versionKey(sourceVersion: string): { domain: 'integer' | 'instant'; value: number } | null {
+  if (/^\d{1,15}$/.test(sourceVersion)) return { domain: 'integer', value: Number(sourceVersion) };
+  if (!/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(sourceVersion)) return null;
+  const day = sourceVersion.slice(0, 10);
+  if (new Date(`${day}T00:00:00Z`).toISOString().slice(0, 10) !== day) return null;
+  const value = Date.parse(sourceVersion);
+  return Number.isFinite(value) ? { domain: 'instant', value } : null;
+}
+
 /** Validate untrusted input as a schema-2 SourceEvent. Rejects rather than repairs. */
 export function parseSourceEvent(raw: unknown): ParseResult {
   if (!isObj(raw)) return { ok: false, reason: 'not an object' };
   if (raw.schema !== SOURCE_EVENT_SCHEMA) return { ok: false, reason: 'unsupported schema version' };
+  const extra = unknownField(raw, 'schema,eventId,source,scope,entity,kind,occurredAt,observedAt,sourceVersion,headSha,payload,provenance,visibility');
+  if (extra) return extra;
   if (!str(raw.eventId)) return { ok: false, reason: 'missing eventId' };
   if (!oneOf(SOURCES, raw.source)) return { ok: false, reason: 'unknown source' };
   const { scope, entity, payload, provenance } = raw;
   if (!isObj(scope) || !str(scope.account)) return { ok: false, reason: 'missing scope.account' };
-  if (scope.repoId !== undefined && !Number.isSafeInteger(scope.repoId)) return { ok: false, reason: 'scope.repoId must be an integer id' };
+  const scopeExtra = unknownField(scope, 'account,repoId,linearTeamId', 'scope.');
+  if (scopeExtra) return scopeExtra;
+  if ('repoId' in scope && !(typeof scope.repoId === 'number' && Number.isSafeInteger(scope.repoId) && scope.repoId > 0)) return { ok: false, reason: 'scope.repoId must be an integer id' };
   if (scope.linearTeamId !== undefined && !str(scope.linearTeamId)) return { ok: false, reason: 'bad scope.linearTeamId' };
+  if (raw.source === 'github' && scope.repoId === undefined) return { ok: false, reason: 'github events need scope.repoId' };
+  if (raw.source === 'linear' && scope.linearTeamId === undefined) return { ok: false, reason: 'linear events need scope.linearTeamId' };
+  if (raw.source === 'github' && scope.linearTeamId !== undefined) return { ok: false, reason: 'github events take no scope.linearTeamId' };
+  if (raw.source === 'linear' && scope.repoId !== undefined) return { ok: false, reason: 'linear events take no scope.repoId' };
+  const entityExtra = isObj(entity) && unknownField(entity, 'kind,id', 'entity.');
+  if (entityExtra) return entityExtra;
   if (!isObj(entity) || !oneOf(ENTITY_KINDS, entity.kind) || !str(entity.id)) return { ok: false, reason: 'missing or unknown entity' };
   if (typeof raw.kind !== 'string') return { ok: false, reason: 'missing kind' };
   if (raw.occurredAt !== null && !str(raw.occurredAt, 64)) return { ok: false, reason: 'bad occurredAt' };
   if (!str(raw.observedAt, 64)) return { ok: false, reason: 'missing observedAt' };
   if (!str(raw.sourceVersion, 100)) return { ok: false, reason: 'missing sourceVersion' };
+  if (!versionKey(raw.sourceVersion)) return { ok: false, reason: 'unparseable sourceVersion' };
   if (raw.headSha !== undefined && !(typeof raw.headSha === 'string' && /^[0-9a-f]{7,64}$/.test(raw.headSha))) return { ok: false, reason: 'bad headSha' };
   if (!isObj(payload) || Object.keys(payload).length > MAX_PAYLOAD_KEYS) return { ok: false, reason: 'bad payload' };
   for (const v of Object.values(payload)) {
     if (!(v === null || typeof v === 'number' || typeof v === 'boolean' || (typeof v === 'string' && v.length <= MAX_TEXT))) return { ok: false, reason: 'payload values must be bounded scalars' };
   }
-  if (!isObj(provenance) || !oneOf(FETCHED_VIA, provenance.fetchedVia)) return { ok: false, reason: 'bad provenance' };
+  if (!isObj(provenance)) return { ok: false, reason: 'bad provenance' };
+  const provenanceExtra = unknownField(provenance, 'url,fetchedVia,generation', 'provenance.');
+  if (provenanceExtra) return provenanceExtra;
+  if (!oneOf(FETCHED_VIA, provenance.fetchedVia)) return { ok: false, reason: 'bad provenance' };
+  if ('url' in provenance && !(str(provenance.url, 300) && provenance.url.startsWith('https://'))) return { ok: false, reason: 'bad provenance.url' };
+  if ('generation' in provenance && !str(provenance.generation, 100)) return { ok: false, reason: 'bad provenance.generation' };
   if (raw.visibility !== 'public' && raw.visibility !== 'private') return { ok: false, reason: 'bad visibility' };
   const known = oneOf(EVENT_KINDS, raw.kind);
   const event = {
@@ -67,7 +97,7 @@ export function parseSourceEvent(raw: unknown): ParseResult {
     entity: { kind: entity.kind, id: entity.id }, kind: known ? (raw.kind as EventKind) : 'unknown',
     occurredAt: raw.occurredAt as string | null, observedAt: raw.observedAt, sourceVersion: raw.sourceVersion,
     ...(raw.headSha !== undefined ? { headSha: raw.headSha as string } : {}),
-    payload: payload as Record<string, PayloadValue>,
+    payload: { ...payload } as Record<string, PayloadValue>,
     provenance: { fetchedVia: provenance.fetchedVia, ...(str(provenance.url, 300) ? { url: provenance.url } : {}), ...(str(provenance.generation, 100) ? { generation: provenance.generation } : {}) },
     visibility: raw.visibility,
   } satisfies SourceEvent;
@@ -84,6 +114,6 @@ export function fromEvidenceEvent(e: EvidenceEvent): SourceEvent {
   return {
     schema: SOURCE_EVENT_SCHEMA, eventId: `fixture:${e.id}`, source: 'fixture', scope: { account: 'fixture' },
     entity: { kind: A_ENTITY[e.type], id: e.entityId }, kind: e.type, occurredAt: null, observedAt: `tick:${e.at}`,
-    sourceVersion: String(e.at), ...head, payload: e.payload, provenance: { fetchedVia: 'fixture' }, visibility: 'public',
+    sourceVersion: String(e.at), ...head, payload: { ...e.payload }, provenance: { fetchedVia: 'fixture' }, visibility: 'public',
   };
 }

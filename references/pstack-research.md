@@ -2,7 +2,7 @@
 
 Official upstream: https://github.com/cursor/plugins/tree/main/pstack . Cursor's marketplace source link resolves to cursor/plugins, whose catalog attributes pstack to Lauren Tan. https://cursor.com/marketplace/cursor/pstack . No installation performed; exact revision and full conformance audit remain future work.
 
-Shared skills origin verified read-only: https://github.com/optomachina/skills.git at /Users/blainewilson/skills. Local OverDrafter docs/review-findings-to-rules.md explicitly attributes the OVD-840 workstream practice to poteto's workshop: prioritize architectural fixes, then lint/tests, then skill/rules, then human review; repeated categories across two PRs become rule-conversion tasks.
+Shared skills origin verified read-only: https://github.com/optomachina/skills.git at <shared skills checkout>. Local OverDrafter docs/review-findings-to-rules.md explicitly attributes the OVD-840 workstream practice to poteto's workshop: prioritize architectural fixes, then lint/tests, then skill/rules, then human review; repeated categories across two PRs become rule-conversion tasks.
 
 Linear records read: OVD-840, 842, 843, 841, 854, 844, 851, 845. OVD-840 identifies @poteto's pstack and /workspace/plans/pstack-automerge.md on another box. That plan file was not retrieved. Recorded sequence: verification skill → CI verification → proof check → queue → detector/verdict → eligibility. OVD-842 explicitly names /create-verification-skill and Launch/Doctor/Drive/Evidence/Cleanup.
 

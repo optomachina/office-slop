@@ -1,6 +1,6 @@
 # Opus development consultation
 
-Source: https://claude.ai/chat/9ae91ba7-a634-48c2-9fba-15a5fb84371f
+Source: (private design thread, not public)
 Observed model: Opus 5.5 Medium. Completed browser response October 16, 2026. CLI unauthenticated; existing sessions unchanged.
 
 Recommended Vite/React/TypeScript/Pixi, pure evidence reducer → selectors → scene and DOM shell, no animation writes to state. Freeze contracts, split domain/fixtures, scene/audio, shell, independent verification ownership. Synthetic saved New Game, Continue, Options; replay happy path, repair/new head, holds, quotas, reconnect and linked PRs. Review current-head evidence, idempotency, save version, input recovery, reduced motion and accessible list parity. UI safety relies on no external executor paths, not comments.

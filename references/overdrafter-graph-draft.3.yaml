@@ -211,7 +211,7 @@
   "adapters": [
     "AGENTS.md",
     "CLAUDE.md",
-    "openclaw-mini:~/.hermes/SOUL.md",
+    "<agent host>:<agent SOUL.md>",
     "agent-data/workflows/agent-orchestrator-linear/SKILL.md"
   ]
 }

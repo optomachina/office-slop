@@ -962,3 +962,11 @@ small {
   .screen-office .work-panels { grid-column: 1; grid-row: 4; min-height: auto; overflow: visible; }
   .screen-office .replay-bar { grid-row: 5; }
 }
+
+/* Readable fallback when the lazy office scene chunk fails to load. */
+.scene-fallback {
+  position: absolute; inset: 0; display: grid; place-content: center; gap: 10px;
+  padding: 24px; text-align: center; color: #d9e4d8;
+}
+.scene-fallback p { margin: 0; color: #9fb3aa; }
+.scene-fallback button { justify-self: center; }

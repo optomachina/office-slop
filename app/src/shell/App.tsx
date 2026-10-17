@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useOfficeAudio } from "../audio/useOfficeAudio";
 import { createLoadState } from "../fixtures/load";
 import { workflowDefinition } from "../domain/workflow";
@@ -15,9 +15,13 @@ import {
   audiences,
 } from "./storage";
 import Leaderboard from "./Leaderboard";
+import SceneBoundary from "./SceneBoundary";
+import { sceneLoader } from "./sceneLoader";
 
-const OfficeScene = lazy(() => import("../scene/OfficeScene"));
 export default function App() {
+  const [sceneAttempt, setSceneAttempt] = useState(0);
+  // A rejected lazy() stays rejected, so each retry builds a fresh one.
+  const OfficeScene = useMemo(() => lazy(() => sceneLoader.load()), [sceneAttempt]);
   const [state, setState] = useState<GameState>(createInitialState),
     [screen, setScreen] = useState<"menu" | "interview" | "office">("menu"),
     [modal, setModal] = useState<"options" | "leaderboard" | "needs" | null>(
@@ -199,14 +203,16 @@ export default function App() {
   return (
     <div className={`game-app screen-${screen} ${options.reducedMotion ? "reduced-motion" : ""}`}>
       <div className="world">
-        <Suspense fallback={<p role="status">Loading office…</p>}>
-          <OfficeScene
-            state={state}
-            reducedMotion={options.reducedMotion}
-            selectedId={selected}
-            onSelect={screen === "office" ? select : () => {}}
-          />
-        </Suspense>
+        <SceneBoundary key={sceneAttempt} onRetry={() => setSceneAttempt((n) => n + 1)}>
+          <Suspense fallback={<p className="scene-loading" role="status">Loading office…</p>}>
+            <OfficeScene
+              state={state}
+              reducedMotion={options.reducedMotion}
+              selectedId={selected}
+              onSelect={screen === "office" ? select : () => {}}
+            />
+          </Suspense>
+        </SceneBoundary>
       </div>
       {screen === "menu" && (
         <main className="menu-screen">

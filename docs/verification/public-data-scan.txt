@@ -19,6 +19,8 @@
 #   planning/page-link.json: access permissions restored to booleans; sources emptied
 #
 # Remaining (intentional or synthetic):
+planning/current-plan.md:25: named owner
+references/jev-current.md:30: named owner
 AGENTS.md:18: named owner
 AGENTS.md:23: named owner
 AGENTS.md:29: named owner

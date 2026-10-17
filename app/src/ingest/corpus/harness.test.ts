@@ -59,3 +59,30 @@ it('retains unknown kinds without applying them', () => {
   expect(result.entities).toEqual({});
   expect(result.warnings).toEqual(['kept: unknown event kind (a)']);
 });
+it('dedupes copies that differ only in observedAt and provenance', () => {
+  const a = event('a', '2');
+  const b: SourceEvent = { ...a, observedAt: 'logical:2', provenance: { fetchedVia: 'webhook' } };
+  const result = both(a, b);
+  expect(result.conflicts).toEqual([]);
+  expect(result.duplicates).toBe(1);
+  expect(Object.values(result.entities)[0].fetchedVia).toEqual(['poll', 'webhook']);
+});
+it('orders several conflicts on one key independently of arrival', () => {
+  const lines = [event('p', '1'), event('q', '1'), event('p', '2'), event('q', '2')].map((e) => JSON.stringify(e));
+  const orders = [[0, 1, 2, 3], [1, 0, 3, 2], [3, 2, 1, 0], [2, 3, 0, 1], [1, 3, 0, 2]];
+  const first = JSON.stringify(projectCorpus(lines));
+  for (const order of orders) expect(JSON.stringify(projectCorpus(order.map((i) => lines[i])))).toBe(first);
+  expect(projectCorpus(lines).conflicts.map((c) => c.eventIds)).toEqual([['p'], ['q']]);
+});
+it("escapes '|' so ids cannot collide across scopes", () => {
+  const a: SourceEvent = { ...event('a', '1', 1), scope: { account: 'a', repoId: 1 }, entity: { kind: 'pr', id: 'x|5|pr|z' } };
+  const b: SourceEvent = { ...event('b', '1', 5), scope: { account: 'a|1|pr|x', repoId: 5 }, entity: { kind: 'pr', id: 'z' } };
+  const result = both(a, b);
+  expect(Object.keys(result.entities).sort()).toEqual(['github|a%7C1%7Cpr%7Cx|5|pr|z', 'github|a|1|pr|x%7C5%7Cpr%7Cz']);
+  expect(result.stale).toBe(0);
+});
+it('treats different unknown raw kinds under one eventId as a conflict', () => {
+  const result = both({ ...event('u', '1'), kind: 'foo' } as unknown as SourceEvent, { ...event('u', '1'), kind: 'bar' } as unknown as SourceEvent);
+  expect(result.conflicts.map((c) => c.reason)).toEqual(['same eventId, different content']);
+  expect(result.accepted).toBe(0);
+});

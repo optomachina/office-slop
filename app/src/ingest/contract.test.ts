@@ -47,7 +47,13 @@ it.each(invalidCases)('fails closed: %j', (raw, reason) => {
 it('orders integer versions and normalizes zoned instants', () => {
   expect(versionKey('2')).toEqual({ domain: 'integer', value: 2 });
   expect(versionKey('10')).toEqual({ domain: 'integer', value: 10 });
-  for (const invalid of ['1a', '2026-02-30T11:30:00Z', '2026-10-03T24:00:00Z', '2026-10-03T11:30:00', '1000000000000000']) expect(versionKey(invalid)).toBeNull();
+  expect(versionKey('0')).toEqual({ domain: 'integer', value: 0 });
+  for (const invalid of ['1a', '2026-02-30T11:30:00Z', '2026-10-03T24:00:00Z', '2026-10-03T11:30:00', '1000000000000000', '007', '00']) expect(versionKey(invalid)).toBeNull();
   expect(versionKey('2026-10-03T13:30:00+02:00')).toEqual(versionKey('2026-10-03T11:30:00Z'));
   expect(versionKey('2026-10-03T11:30:00Z')).toEqual({ domain: 'instant', value: Date.UTC(2026, 9, 3, 11, 30) });
+});
+it('keeps the raw kind name of an unknown kind', () => {
+  const parsed = parseSourceEvent({ ...base, kind: 'deployment_status' });
+  expect(parsed).toMatchObject({ ok: true, event: { kind: 'unknown', rawKind: 'deployment_status' }, warning: 'unknown event kind' });
+  expect(parseSourceEvent({ ...base, kind: '' })).toEqual({ ok: false, reason: 'missing kind' });
 });

@@ -11,7 +11,11 @@ export interface CorpusProjection {
   stale: number;
   warnings: string[];
 }
-const keyOf = (e: SourceEvent) => `${e.source}|${e.scope.account}|${e.scope.repoId ?? e.scope.linearTeamId ?? '-'}|${e.entity.kind}|${e.entity.id}`;
+// Components are escaped (% then |) so a '|' inside an id cannot make two scopes collide.
+const esc = (v: string | number) => String(v).replace(/%/g, '%25').replace(/\|/g, '%7C');
+const keyOf = (e: SourceEvent) => [e.source, e.scope.account, e.scope.repoId ?? e.scope.linearTeamId ?? '-', e.entity.kind, e.entity.id].map(esc).join('|');
+// What a copy asserts. observedAt (ingest time) and provenance (delivery channel) are observation metadata, not content.
+const content = (e: SourceEvent) => JSON.stringify(stable({ schema: e.schema, eventId: e.eventId, source: e.source, scope: e.scope, entity: e.entity, kind: e.kind, rawKind: e.rawKind ?? null, occurredAt: e.occurredAt, sourceVersion: e.sourceVersion, headSha: e.headSha ?? null, payload: e.payload, visibility: e.visibility }));
 const cmp = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
 function stable(value: unknown): unknown {
   if (value === null || typeof value !== 'object') return value;
@@ -40,7 +44,7 @@ export function projectCorpus(lines: readonly string[]): CorpusProjection {
   const groups = new Map<string, { event: SourceEvent; fetchedVia: string[] }[]>();
   let accepted = 0, duplicates = 0, stale = 0;
   for (const [eventId, copies] of seen) {
-    const contents = new Set(copies.map(({ provenance: _provenance, ...event }) => JSON.stringify(stable(event))));
+    const contents = new Set(copies.map(content));
     if (contents.size > 1) {
       conflicts.push({ key: copies.map(keyOf).sort()[0], reason: 'same eventId, different content', eventIds: [eventId] });
       continue;
@@ -71,7 +75,7 @@ export function projectCorpus(lines: readonly string[]): CorpusProjection {
     const { event: e, fetchedVia } = winners[0];
     entities[key] = { source: e.source, scope: e.scope, entity: e.entity, kind: e.kind, sourceVersion: e.sourceVersion, eventId: e.eventId, headSha: e.headSha ?? null, visibility: e.visibility, fetchedVia, payload: stable(e.payload) as SourceEvent['payload'] };
   }
-  conflicts.sort((a, b) => cmp(a.key, b.key) || cmp(a.reason, b.reason));
+  conflicts.sort((a, b) => cmp(a.key, b.key) || cmp(a.reason, b.reason) || cmp(a.eventIds.join('\u0000'), b.eventIds.join('\u0000')));
   rejected.sort((a, b) => cmp(a.digest, b.digest) || cmp(a.reason, b.reason) || a.line - b.line);
   return { entities, conflicts, rejected, accepted, duplicates, stale, warnings: warnings.sort() };
 }

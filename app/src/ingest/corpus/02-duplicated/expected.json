@@ -1,5 +1,28 @@
 {
   "entities": {
+    "github|synthetic-org|1000001|check|chk-20": {
+      "source": "github",
+      "scope": {
+        "account": "synthetic-org",
+        "repoId": 1000001
+      },
+      "entity": {
+        "kind": "check",
+        "id": "chk-20"
+      },
+      "kind": "check",
+      "sourceVersion": "1",
+      "eventId": "d-3",
+      "headSha": "bbbbbbb",
+      "visibility": "public",
+      "fetchedVia": [
+        "poll",
+        "webhook"
+      ],
+      "payload": {
+        "conclusion": "success"
+      }
+    },
     "github|synthetic-org|1000001|review|rev-9": {
       "source": "github",
       "scope": {
@@ -48,8 +71,8 @@
   },
   "conflicts": [],
   "rejected": [],
-  "accepted": 2,
-  "duplicates": 3,
+  "accepted": 3,
+  "duplicates": 4,
   "stale": 0,
   "warnings": []
 }

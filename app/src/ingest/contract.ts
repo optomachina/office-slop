@@ -21,9 +21,10 @@ export interface SourceEvent {
   scope: { account: string; repoId?: number; linearTeamId?: string };
   entity: { kind: EntityKind; id: string };
   kind: EventKind;
+  rawKind?: string; // the source's kind name when kind is 'unknown' (output only; not accepted as input)
   occurredAt: string | null; // source time; may be wrong or skewed
   observedAt: string; // ingest time (logical clock in tests)
-  sourceVersion: string; // unsigned integer or zoned ISO timestamp
+  sourceVersion: string; // unsigned integer without leading zeros, or zoned ISO timestamp
   headSha?: string; // binds review/check evidence to a head
   payload: Record<string, PayloadValue>;
   provenance: { url?: string; fetchedVia: (typeof FETCHED_VIA)[number]; generation?: string };
@@ -44,7 +45,7 @@ const unknownField = (value: Record<string, unknown>, allowed: string, prefix = 
 };
 
 export function versionKey(sourceVersion: string): { domain: 'integer' | 'instant'; value: number } | null {
-  if (/^\d{1,15}$/.test(sourceVersion)) return { domain: 'integer', value: Number(sourceVersion) };
+  if (/^(?:0|[1-9]\d{0,14})$/.test(sourceVersion)) return { domain: 'integer', value: Number(sourceVersion) };
   if (!/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(sourceVersion)) return null;
   const day = sourceVersion.slice(0, 10);
   if (new Date(`${day}T00:00:00Z`).toISOString().slice(0, 10) !== day) return null;
@@ -73,7 +74,7 @@ export function parseSourceEvent(raw: unknown): ParseResult {
   const entityExtra = isObj(entity) && unknownField(entity, 'kind,id', 'entity.');
   if (entityExtra) return entityExtra;
   if (!isObj(entity) || !oneOf(ENTITY_KINDS, entity.kind) || !str(entity.id)) return { ok: false, reason: 'missing or unknown entity' };
-  if (typeof raw.kind !== 'string') return { ok: false, reason: 'missing kind' };
+  if (!str(raw.kind, 100)) return { ok: false, reason: 'missing kind' };
   if (raw.occurredAt !== null && !str(raw.occurredAt, 64)) return { ok: false, reason: 'bad occurredAt' };
   if (!str(raw.observedAt, 64)) return { ok: false, reason: 'missing observedAt' };
   if (!str(raw.sourceVersion, 100)) return { ok: false, reason: 'missing sourceVersion' };
@@ -94,7 +95,7 @@ export function parseSourceEvent(raw: unknown): ParseResult {
   const event = {
     schema: SOURCE_EVENT_SCHEMA, eventId: raw.eventId, source: raw.source,
     scope: { account: scope.account, ...(scope.repoId !== undefined ? { repoId: scope.repoId as number } : {}), ...(scope.linearTeamId !== undefined ? { linearTeamId: scope.linearTeamId as string } : {}) },
-    entity: { kind: entity.kind, id: entity.id }, kind: known ? (raw.kind as EventKind) : 'unknown',
+    entity: { kind: entity.kind, id: entity.id }, kind: known ? (raw.kind as EventKind) : 'unknown', ...(known ? {} : { rawKind: raw.kind }),
     occurredAt: raw.occurredAt as string | null, observedAt: raw.observedAt, sourceVersion: raw.sourceVersion,
     ...(raw.headSha !== undefined ? { headSha: raw.headSha as string } : {}),
     payload: { ...payload } as Record<string, PayloadValue>,

@@ -20,15 +20,15 @@ function shuffle<T>(items: readonly T[], seed: number): T[] {
 }
 
 describe('Milestone B seed corpus', () => {
-  it('has the three seed cases, each with input, expectation and notes', () => {
-    expect(cases).toEqual(['01-malformed', '02-duplicated', '03-out-of-order']);
+  it('has the four seed cases, each with input, expectation and notes', () => {
+    expect(cases).toEqual(['01-malformed', '02-duplicated', '03-out-of-order', '04-conflicts']);
     for (const name of cases) {
       expect(expectations[`./${name}/expected.json`], name).toBeDefined();
       expect(notes[`./${name}/notes.md`], name).toMatch(/Synthetic data only/);
     }
   });
 
-  for (const name of ['01-malformed', '02-duplicated', '03-out-of-order']) {
+  for (const name of ['01-malformed', '02-duplicated', '03-out-of-order', '04-conflicts']) {
     describe(name, () => {
       const lines = (inputs[`./${name}/input.jsonl`] ?? '').split('\n');
       if (lines.at(-1) === '') lines.pop();

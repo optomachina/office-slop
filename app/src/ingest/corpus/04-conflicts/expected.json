@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "github|synthetic-org%7C1000001%7Chead%7Cx|5|head|z": {
+      "source": "github",
+      "scope": {
+        "account": "synthetic-org|1000001|head|x",
+        "repoId": 5
+      },
+      "entity": {
+        "kind": "head",
+        "id": "z"
+      },
+      "kind": "head",
+      "sourceVersion": "1",
+      "eventId": "g-2",
+      "headSha": "ffff002",
+      "visibility": "public",
+      "fetchedVia": [
+        "poll"
+      ],
+      "payload": {}
+    },
+    "github|synthetic-org|1000001|head|x%7C5%7Chead%7Cz": {
+      "source": "github",
+      "scope": {
+        "account": "synthetic-org",
+        "repoId": 1000001
+      },
+      "entity": {
+        "kind": "head",
+        "id": "x|5|head|z"
+      },
+      "kind": "head",
+      "sourceVersion": "1",
+      "eventId": "g-1",
+      "headSha": "ffff001",
+      "visibility": "public",
+      "fetchedVia": [
+        "poll"
+      ],
+      "payload": {}
+    }
+  },
+  "conflicts": [
+    {
+      "key": "github|synthetic-org|1000001|check|chk-40",
+      "reason": "same eventId, different content",
+      "eventIds": [
+        "c-p"
+      ]
+    },
+    {
+      "key": "github|synthetic-org|1000001|check|chk-40",
+      "reason": "same eventId, different content",
+      "eventIds": [
+        "c-q"
+      ]
+    },
+    {
+      "key": "github|synthetic-org|1000001|head|pr-42",
+      "reason": "mixed version domains",
+      "eventIds": [
+        "x-1",
+        "x-2"
+      ]
+    },
+    {
+      "key": "github|synthetic-org|1000001|review|rev-41",
+      "reason": "version tie",
+      "eventIds": [
+        "t-a",
+        "t-b"
+      ]
+    }
+  ],
+  "rejected": [],
+  "accepted": 7,
+  "duplicates": 0,
+  "stale": 1,
+  "warnings": []
+}

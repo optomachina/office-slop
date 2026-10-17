@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest';
-import { OfficeLayout, iso, gridPath, isWalkable, hitTest, stationSlots, sceneLabels, rectanglesIntersect, wallHeight, robotRoute, providerAnchors, dispatchAnchor } from './layout';
+import { OfficeLayout, iso, gridPath, isWalkable, hitTest, stationSlots, sceneLabels, rectanglesIntersect, wallHeight, robotRoute, providerAnchors, dispatchAnchor, labelPlate } from './layout';
 import { selectScene, CARD_LIMIT } from './selectors';
 import { createInitialState, reduceEvent, scenarios } from '../domain';
 import { createLoadState } from '../fixtures/load';
@@ -24,3 +24,5 @@ describe('scene presentation geometry',()=>{
 });
 
 it('keeps station and dispatch signs outside provider tank silhouettes',()=>{for(const state of [createInitialState(),createLoadState()]){const labels=sceneLabels(selectScene(state).stations,state.providers).filter(l=>l.id.startsWith('station:')||l.id==='dispatch');for(const anchor of providerAnchors(state.providers.length)){const p=iso(anchor.x,anchor.y);const tank={id:'tank',text:'',x:p.x,y:p.y-35,width:42,height:90,size:0,color:0};for(const label of labels)expect(rectanglesIntersect(label,tank),label.id).toBe(false);}}});
+
+it('backs every station and dispatch sign with a plate that covers its text, and leaves tank readouts bare',()=>{const state=createInitialState();for(const label of sceneLabels(selectScene(state).stations,state.providers)){const plate=labelPlate(label,60,14);if(label.id.startsWith('station:')||label.id==='dispatch'){expect(plate,label.id).not.toBeNull();expect(plate!.x).toBeLessThan(label.x-30);expect(plate!.x+plate!.width).toBeGreaterThan(label.x+30);expect(plate!.y).toBeLessThan(label.y-7);expect(plate!.y+plate!.height).toBeGreaterThan(label.y+7);}else expect(plate,label.id).toBeNull();}});

@@ -44,6 +44,8 @@ export const wallHeight=(wall:typeof OfficeLayout.walls[number])=>
 export type LabelRectangle={id:string;text:string;x:number;y:number;width:number;height:number;size:number;color:number};
 export const rectanglesIntersect=(a:LabelRectangle,b:LabelRectangle)=>Math.abs(a.x-b.x)<(a.width+b.width)/2+4&&Math.abs(a.y-b.y)<(a.height+b.height)/2+4;
 /** One compact name/count sign per station; conservative bounds keep signs apart. */
+/** Dark backing plate for station and dispatch signs so they stay readable over robots and desks. */
+export const labelPlate=(label:Pick<LabelRectangle,'id'|'x'|'y'>,width:number,height:number)=>label.id.startsWith('station:')||label.id==='dispatch'?{x:label.x-width/2-6,y:label.y-height/2-3,width:width+12,height:height+6}:null;
 export function sceneLabels(stationCounts:readonly {id:string;count:number;excess:number}[],providers:readonly {id:string;name:string}[]):LabelRectangle[]{
  const result:LabelRectangle[]=[];
  const add=(id:string,text:string,p:Point,size:number,color:number)=>{const rect={id,text,...p,width:text.length*(size+1),height:size+4,size,color};while(result.some(other=>rectanglesIntersect(rect,other)))rect.y-=18;result.push(rect);};

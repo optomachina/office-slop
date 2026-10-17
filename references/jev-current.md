@@ -36,10 +36,10 @@ Earlier web-only X searches/direct fetches failed; the dedicated browser tab suc
 
 ## Local readiness, inspected read-only
 
-- Shared skill exists at `/Users/blainewilson/.codex/skills/typesafe-ai/SKILL.md`; Jev-first workflow guide exists beside it. It requires narrow decisions, ordinary-code guards, measured outcomes, and explicit fallbacks. It prohibits credential hunting.
-- Existing OverDrafter client: `/Users/blainewilson/Overdrafter/scripts/jev-client.mjs`. It pins 1.13.0, supports optional model override, returns sanitized failure results, and has a synthetic `--smoke` path. Documentation describes authorized environment credentials or Claude Code's injecting proxy, not guaranteed availability on this Mac.
-- Existing screen: `/Users/blainewilson/Overdrafter/scripts/jev-pr-screen.mjs`; existing bounded recovery implementation: `/Users/blainewilson/Overdrafter/worker/src/recovery/jevDecision.ts`.
-- Historical live evaluation documented at `/Users/blainewilson/Overdrafter/docs/release/jarvis-loop/jev-agent-decisions.md` reports cloud calls on October 4–6. That does not verify local invocation now.
+- Shared skill exists at `<codex skills dir>/typesafe-ai/SKILL.md`; Jev-first workflow guide exists beside it. It requires narrow decisions, ordinary-code guards, measured outcomes, and explicit fallbacks. It prohibits credential hunting.
+- Existing OverDrafter client: `<OverDrafter checkout>/scripts/jev-client.mjs`. It pins 1.13.0, supports optional model override, returns sanitized failure results, and has a synthetic `--smoke` path. Documentation describes authorized environment credentials or Claude Code's injecting proxy, not guaranteed availability on this Mac.
+- Existing screen: `<OverDrafter checkout>/scripts/jev-pr-screen.mjs`; existing bounded recovery implementation: `<OverDrafter checkout>/worker/src/recovery/jevDecision.ts`.
+- Historical live evaluation documented at `<OverDrafter checkout>/docs/release/jarvis-loop/jev-agent-decisions.md` reports cloud calls on October 4–6. That does not verify local invocation now.
 - No direct TypeSafe/Jev connector tools were exposed in the current tool catalog. Bird 0.8.0 is installed, but was not used to extract browser cookies. No secrets, environment values or keychain entries were inspected. CLI network retrieval of public docs failed DNS in the sandbox; web retrieval succeeded.
 - **Invocation status: root coordinator executed the existing synthetic smoke through the authorized environment/proxy; it returned `http_403` in 273 ms with no model or usage. Current access is unavailable. No retry or credential changes.** Do not label simulated decisions as Jev outputs.
 
@@ -56,7 +56,7 @@ The first playable can proceed with deterministic fixtures while live Jev availa
 Once the coordinator confirms the existing authorized TypeSafe environment or proxy on its execution host, the existing synthetic client smoke is:
 
 ```sh
-NODE_USE_ENV_PROXY=1 node --no-warnings /Users/blainewilson/Overdrafter/scripts/jev-client.mjs --smoke
+NODE_USE_ENV_PROXY=1 node --no-warnings <OverDrafter checkout>/scripts/jev-client.mjs --smoke
 ```
 
 This pins 1.13.0, sends a synthetic worker-routing question, and prints sanitized status, model, latency, tokens and answer. It neither changes repository files nor searches credential stores. Successful execution must precede any claim of live Jev readiness. The existing client permits a 1.14.0 model option for text comparisons; it does not currently expose image assets or experimental headers, so the Box path requires a separate reviewed integration. Keep credentials server-side and reuse the existing mechanism rather than copying it into Office Slop.

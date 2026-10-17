@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import type { SceneProps } from '../contracts';
 import App from '../shell/App';
 import officeStyles from '../shell/styles.css?raw';
+import officeSceneSource from '../scene/OfficeScene.tsx?raw';
 import { sceneLabels } from '../scene/layout';
 import { selectScene } from '../scene/selectors';
 import { sceneLoader } from '../shell/sceneLoader';
@@ -368,4 +369,8 @@ it('offers Reload page when retrying the office scene fails again', async () => 
   expect(reload).toHaveBeenCalledTimes(1);
   expect(load).toHaveBeenCalledTimes(2);
  } finally { load.mockRestore(); reload.mockRestore(); report.mockRestore(); error.mockRestore(); }
+});
+
+it('draws a backing plate behind each station sign in the real Pixi scene', () => {
+ expect(officeSceneSource).toMatch(/const plate=labelPlate\(spec,t\.width,t\.height\);if\(plate\)labels\.addChildAt\(new Graphics\(\)\.roundRect\(plate\.x,plate\.y,plate\.width,plate\.height/);
 });

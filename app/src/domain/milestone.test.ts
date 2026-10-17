@@ -51,3 +51,14 @@ describe('Milestone A fixture invariants', () => {
     expect(state.holds.some(h => h.issueId === historical.id)).toBe(false);
   });
 });
+
+it('keeps activity on a held issue at hold', () => {
+ const state=reduceEvent(createInitialState(), {id:'held-activity',at:1,source:'fixture',type:'activity',entityId:'robot-pip',payload:{issueId:'issue-sharing',stage:'build',activityId:'held-run'}});
+ expect(state.robots.find(r=>r.id==='robot-pip')?.stage).toBe('hold');
+});
+it('counts log appends beyond the retained window', () => {
+ let state=createInitialState();
+ for(let i=0;i<110;i++) state=setPause(state,true);
+ expect(state.logCount).toBe(113);
+ expect(state.log).toHaveLength(100);
+});

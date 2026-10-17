@@ -6,6 +6,6 @@ export function createLoadState() {
   const stages: Stage[] = ['intake','planning','build','review','qa','merge','repair','hold'];
   state.issues = Array.from({length:200}, (_, i) => ({id:`load-card-${i}`, title:`Load card ${i + 1}`, stage:stages[i % stages.length], prIds:[]}));
   state.robots = Array.from({length:20}, (_, i) => ({id:`load-robot-${i}`, name:`Robot ${i + 1}`, role:'Synthetic worker', provider:'Demo', activityId:`load-run-${i}`, issueId:state.issues[i].id, stage:state.issues[i].stage, color:'#9ce9bd'}));
-  state.prs=[]; state.holds=[]; state.log=['Representative simulation: 20 robots and 200 cards.'];
+  state.logCount=1; state.prs=[]; state.holds=[]; state.log=['Representative simulation: 20 robots and 200 cards.'];
   return state;
 }

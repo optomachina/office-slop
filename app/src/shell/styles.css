@@ -922,3 +922,14 @@ small {
   transition: none !important;
   scroll-behavior: auto !important;
 }
+
+/* Reserve a dedicated capacity strip; it never shares the canvas bounds. */
+.screen-office .world { top: 205px; bottom: 150px; }
+.screen-office .office-caption { display: none; }
+.screen-office .capacity-toolbar { left: 28px; right: 28px; top: 86px; height: 110px; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: auto; }
+@media (max-width: 600px) {
+  .screen-office .capacity-toolbar { top: 105px; left: 12px; right: 12px; height: 100px; grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+  .screen-office .world { top: 215px; bottom: 180px; }
+}
+
+.screen-office .office-scene { min-height: 0; }

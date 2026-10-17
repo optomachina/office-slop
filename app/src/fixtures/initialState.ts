@@ -3,7 +3,7 @@ import type { GameState } from '../contracts';
 /** A fresh synthetic office per game; never shared mutable state. */
 export function createInitialState():GameState {
   return {
-    tick:0,seen:[],connected:true,paused:false,requestedPause:false,
+    logCount:3,tick:0,seen:[],connected:true,paused:false,requestedPause:false,
     issues:[
       {id:'issue-history',title:'Historical: Office Slop architecture consultation',stage:'planning',prIds:[],provenance:'Imported from planning/opus-development-plan.md; Claude consultation observed October 16, 2026. Recorded recommendation only; no runtime activity or owner hold inferred.'},
       {id:'issue-billing',title:'Connect the revenue scoreboard',stage:'qa',prIds:['pr-billing-api','pr-billing-ui']},

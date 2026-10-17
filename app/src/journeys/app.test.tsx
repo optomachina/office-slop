@@ -6,7 +6,7 @@ import type { SceneProps } from '../contracts';
 import App from '../shell/App';
 
 vi.mock('../scene/OfficeScene', () => ({ default: ({ reducedMotion, onSelect }: SceneProps) =>
-  <div aria-label="Office scene">{reducedMotion ? 'Scene motion reduced' : 'Scene motion enabled'}<button onClick={() => onSelect('robot-moss')}>Scene robot</button><button onClick={() => onSelect('issue-onboarding')}>Scene card</button><button onClick={() => onSelect('station:build')}>Scene station</button></div>,
+  <div aria-label="Office scene">{reducedMotion ? 'Scene motion reduced' : 'Scene motion enabled'}<button onClick={() => onSelect('robot-moss')}>Scene robot</button><button onClick={() => onSelect('issue-onboarding')}>Scene card</button><button onClick={() => onSelect('dispatch')}>Scene dispatch</button><button onClick={() => onSelect('station:build')}>Scene station</button></div>,
 }));
 beforeEach(() => localStorage.clear());
 afterEach(() => cleanup());
@@ -39,7 +39,7 @@ describe('Milestone A user journeys', () => {
     await user.click(screen.getByRole('button', { name: /pause new/i }));
     expect(screen.getByText(/requested: paused/i)).toBeTruthy();
     expect(screen.getByText(/effective: running/i)).toBeTruthy();
-    await waitFor(() => expect(screen.getByText(/effective: paused/i)).toBeTruthy(), { timeout: 2000 });
+    await waitFor(() => expect(screen.getByRole('button', {name: 'Pause new launches', description: /effective: paused/i})).toBeTruthy(), { timeout: 2000 });
     expect(screen.getByText(/running work continues/i)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: /pause new/i }));
     expect(screen.getByText(/requested: running/i)).toBeTruthy();
@@ -225,4 +225,57 @@ it('pans, zooms and resets the real DOM camera controls with keyboard and button
  await user.click(screen.getByRole('button',{name:'Fit office'}));
  expect(camera.zoom).toHaveBeenCalledTimes(4);
  expect(camera.reset).toHaveBeenCalledTimes(2);
+});
+
+it('opens dispatch with requested/effective state and pause evidence', async () => {
+ const user=await enter();
+ await user.click(screen.getByRole('button',{name:'Pause new launches'}));
+ await waitFor(()=>expect(screen.getByRole('status').textContent).toMatch(/Effective: paused/),{timeout:2000});
+ await user.click(screen.getByRole('button',{name:'Scene dispatch'}));
+ const dialog=within(screen.getByRole('dialog'));
+ expect(dialog.getByRole('heading',{name:'Dispatch'})).toBeTruthy();
+ expect(dialog.getByText('Requested: paused')).toBeTruthy();
+ expect(dialog.getByText('Effective: paused')).toBeTruthy();
+ expect(dialog.getByText('Running work continues.')).toBeTruthy();
+ expect(dialog.getByText(/executor confirmed dispatch paused/)).toBeTruthy();
+});
+it('defaults motion from OS while retaining explicit override', async () => {
+ vi.stubGlobal('matchMedia',vi.fn(()=>({matches:true})));
+ try {
+  const user=userEvent.setup(); render(<App/>);
+  expect(screen.getByText('Scene motion reduced')).toBeTruthy();
+  await user.click(screen.getByRole('button',{name:/Options/}));
+  await user.click(screen.getByRole('checkbox',{name:'Reduced motion'}));
+  cleanup(); render(<App/>);
+  expect(screen.getByText('Scene motion enabled')).toBeTruthy();
+ } finally {vi.unstubAllGlobals();}
+});
+it('labels stale capacity and shows robot linked issue and stage', async () => {
+ const user=await enter();
+ expect(screen.getByRole('button',{name:/Cursor capacity: stale · last known 40%/})).toBeTruthy();
+ await user.click(screen.getByRole('button',{name:'Scene robot'}));
+ const dialog=within(screen.getByRole('dialog'));
+ expect(dialog.getByText('Turn a spark into a product brief')).toBeTruthy();
+ expect(dialog.getByText('build')).toBeTruthy();
+});
+it('excludes history from the planning inspector', async () => {
+ const user=await enter();
+ await user.click(screen.getByText(/Work directory/));
+ await user.click(screen.getByRole('button',{name:/^Planning station/}));
+ expect(within(screen.getByRole('dialog')).getByText('1 cards · 1 robots')).toBeTruthy();
+ expect(within(screen.getByRole('dialog')).queryByRole('button',{name:/Historical:/})).toBeNull();
+});
+it('separates manual pause from replay and retains repeated digest events', async () => {
+ const user=await enter();
+ await user.click(screen.getByRole('button',{name:'Play replay'}));
+ expect((screen.getByRole('button',{name:'Pause new launches'}) as HTMLButtonElement).disabled).toBe(true);
+ await user.click(screen.getByRole('button',{name:'Pause replay'}));
+ for(let i=0;i<3;i++) {
+  await user.click(screen.getByRole('button',{name:'Pause new launches'}));
+  expect((screen.getByRole('button',{name:'Play replay'}) as HTMLButtonElement).disabled).toBe(true);
+  await waitFor(()=>expect((screen.getByRole('button',{name:'Play replay'}) as HTMLButtonElement).disabled).toBe(false),{timeout:2000});
+  await user.click(screen.getByRole('button',{name:/^Needs you \d/}));
+  expect(within(screen.getByRole('dialog')).getByText(new RegExp(`Dispatch ${i===1?'resume':'pause'} requested`))).toBeTruthy();
+  await user.click(screen.getByRole('button',{name:'Close dialog'}));
+ }
 });

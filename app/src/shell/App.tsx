@@ -48,7 +48,7 @@ export default function App() {
     [playing, setPlaying] = useState(false),
     [limit, setLimit] = useState("25"),
     [manualPause, setManualPause] = useState<boolean | null>(null);
-  const [viewedLog, setViewedLog] = useState<string[]>([]);
+  const [viewedLog, setViewedLog] = useState(0);
   const [digest, setDigest] = useState<string[]>([]);
   const audio = useOfficeAudio(options.muted, options.volume);
   const sceneScenario =
@@ -144,8 +144,8 @@ export default function App() {
     returnFocus.current = document.activeElement as HTMLElement;
     setSelected(null);
     if (which === "needs") {
-      setDigest(state.log.filter(line => !viewedLog.includes(line)));
-      setViewedLog([...state.log]);
+      setDigest(state.log.slice(0, state.logCount - viewedLog));
+      setViewedLog(state.logCount);
     }
     setModal(which);
   }
@@ -169,7 +169,7 @@ export default function App() {
     setPlaying(false);
     setCursor(0);
     setState(id === "load" ? createLoadState() : createInitialState());
-    setViewedLog([]);
+    setViewedLog(0);
     setDigest([]);
     setSelected(null);
     setScenarioId(id || "");
@@ -196,7 +196,7 @@ export default function App() {
     robot = state.robots.find((r) => r.id === selected),
     prs = issue ? state.prs.filter((p) => issue.prIds.includes(p.id)) : [];
   return (
-    <div className={`game-app ${options.reducedMotion ? "reduced-motion" : ""}`}>
+    <div className={`game-app screen-${screen} ${options.reducedMotion ? "reduced-motion" : ""}`}>
       <div className="world">
         <OfficeScene
           state={state}
@@ -407,9 +407,9 @@ export default function App() {
             <p>Pick a robot or folder to see the work behind it.</p>
           </section>
           <section className="capacity-toolbar" aria-label="Simulated provider capacity">
-            {state.providers.map((p) => <button key={p.id} className={`capacity-tank ${p.state}`} onClick={() => select(p.id)} aria-label={`${p.name} capacity: ${p.state === "ok" ? "known" : p.state}. ${p.reason}`}>
+            {state.providers.map((p) => <button key={p.id} className={`capacity-tank ${p.state}`} onClick={() => select(p.id)} aria-label={`${p.name} capacity: ${p.state === "ok" ? "known" : p.state}${p.level !== null ? ` · ${p.state === "stale" ? "last known " : ""}${Math.round(p.level * 100)}%` : ""}. ${p.reason}`}>
               <span className="tank-glass" aria-hidden="true"><span className="tank-liquid" style={{ height: `${(p.level ?? 0) * 100}%` }} /></span>
-              <span><strong>{p.name}</strong><small>{p.state === "ok" ? "known" : p.state}{p.level !== null ? ` · ${Math.round(p.level * 100)}%` : ""}</small><small>{p.reason}</small></span>
+              <span><strong>{p.name}</strong><small>{p.state === "ok" ? "known" : p.state}{p.level !== null ? ` · ${p.state === "stale" ? "last known " : ""}${Math.round(p.level * 100)}%` : ""}</small><small>{p.reason}</small></span>
             </button>)}
           </section>
           <div className="work-panels">
@@ -422,13 +422,13 @@ export default function App() {
               Work directory <span>{state.issues.length} issues</span>
             </summary>
             <div>
-              {Object.entries(workflowDefinition.stages).map(([id, station]) => <button key={id} onClick={() => select(`station:${id}`)}><span>{station.label} station</span><small>{state.issues.filter(i => i.stage === id).length} cards · {state.robots.filter(r => r.stage === id).length} robots</small></button>)}
+              {Object.entries(workflowDefinition.stages).map(([id, station]) => <button key={id} onClick={() => select(`station:${id}`)}><span>{station.label} station</span><small>{state.issues.filter(i => !i.provenance && i.stage === id).length} cards · {state.robots.filter(r => r.stage === id).length} robots</small></button>)}
               <button onClick={() => select("station:capacity")}>Capacity station</button>
               {state.issues.map((i) => (
                 <button key={i.id} onClick={() => select(i.id)}>
                   <span>{i.title}</span>
                   <small>
-                    {i.stage} · {issueProgress(state, i.id)}
+                    {i.provenance ? "Historical archive" : i.stage} · {issueProgress(state, i.id)}
                   </small>
                 </button>
               ))}
@@ -457,14 +457,14 @@ export default function App() {
                   if (cursor >= sceneScenario.events.length) reset();
                   setPlaying(!playing);
                 }}
-                disabled={!sceneScenario.events.length}
+                disabled={!sceneScenario.events.length || manualPause !== null}
                 aria-label={playing ? "Pause replay" : "Play replay"}
               >
                 {playing ? "Ⅱ" : "▶"}
               </button>
               <button
                 onClick={step}
-                disabled={cursor >= sceneScenario?.events.length}
+                disabled={cursor >= sceneScenario?.events.length || manualPause !== null}
                 aria-label="Next event"
               >
                 Step →
@@ -486,6 +486,8 @@ export default function App() {
             <button
               className="lever"
               aria-label="Pause new launches"
+              aria-describedby="dispatch-status"
+              disabled={playing}
               aria-pressed={state.requestedPause}
               onClick={() => { const desired = !state.requestedPause; setState((s) => setPause(s, desired)); setManualPause(desired); }}
             >
@@ -495,9 +497,9 @@ export default function App() {
                 }
               />
               Pause new launches
-              <small>Requested: {state.requestedPause ? "paused" : "running"}</small>
+              <span id="dispatch-status" role="status" aria-live="polite"><small>Requested: {state.requestedPause ? "paused" : "running"}</small>
               <small>Effective: {state.paused ? "paused" : "running"}</small>
-              <small>Running work continues.</small>
+              <small>Running work continues.</small></span>
             </button>
           </footer>
           {reveal && (
@@ -713,9 +715,10 @@ export default function App() {
                   {robot?.name ||
                     issue?.title ||
                     provider?.name ||
-                    "Workstation"}
+                    (selected === "dispatch" ? "Dispatch" : "Workstation")}
                 </h2>
-                {selected.startsWith("station:") && <section><h3>{selected.slice(8)} station</h3><p>{state.issues.filter(i => i.stage === selected.slice(8)).length} cards · {state.robots.filter(r => r.stage === selected.slice(8)).length} robots</p>{state.issues.filter(i => i.stage === selected.slice(8)).map(i => <button key={i.id} onClick={() => select(i.id)}>{i.title}</button>)}{selected === "station:capacity" && state.providers.map(p => <button key={p.id} onClick={() => select(p.id)}>{p.name}: {p.state}</button>)}</section>}
+                {selected.startsWith("station:") && <section><h3>{selected.slice(8)} station</h3><p>{state.issues.filter(i => !i.provenance && i.stage === selected.slice(8)).length} cards · {state.robots.filter(r => r.stage === selected.slice(8)).length} robots</p>{state.issues.filter(i => !i.provenance && i.stage === selected.slice(8)).map(i => <button key={i.id} onClick={() => select(i.id)}>{i.title}</button>)}{selected === "station:capacity" && state.providers.map(p => <button key={p.id} onClick={() => select(p.id)}>{p.name}: {p.state}</button>)}</section>}
+                {selected === "dispatch" && <section><h3>Launch control</h3><p>Requested: {state.requestedPause ? "paused" : "running"}</p><p>Effective: {state.paused ? "paused" : "running"}</p><p>Running work continues.</p><h3>Last pause events</h3><ul>{state.log.filter(line => /dispatch (pause|resume|paused|resumed)/i.test(line)).slice(0, 5).map((line, index) => <li key={index}>{line}</li>)}</ul>{!state.log.some(line => /dispatch (pause|resume|paused|resumed)/i.test(line)) && <p>No pause events yet.</p>}</section>}
                 {robot && (
                   <p>
                     {robot.provider} · {robot.role} · {sceneFacts.robots.find(bot => bot.id === robot.id)?.queued ? "Queued for busy desk" : "At desk"}
@@ -766,7 +769,7 @@ export default function App() {
                     <h3>
                       {provider.level === null
                         ? "Unknown capacity"
-                        : `${Math.round(provider.level * 100)}% remaining`}
+                        : `${provider.state === "stale" ? "Last known " : ""}${Math.round(provider.level * 100)}% remaining`}
                     </h3>
                     <p>{provider.reason}</p>
                     <p>Reset: {provider.reset}</p>
@@ -776,7 +779,7 @@ export default function App() {
                     </aside>
                   </>
                 )}
-                {!issue && !provider && (
+                {!issue && !provider && selected !== "dispatch" && (
                   <p>
                     This workstation is part of the office workflow. Choose an
                     issue or robot from the work directory to inspect its

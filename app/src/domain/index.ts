@@ -21,7 +21,7 @@ export function reduceEvent(state:GameState,event:EvidenceEvent):GameState {
   const stage=(issueId:string,value:Stage)=>{ if(next.holds.some(h=>h.issueId===issueId&&!h.resolved))value='hold'; const issue=next.issues.find(i=>i.id===issueId); if(issue) issue.stage=value; next.robots.filter(r=>r.issueId===issueId).forEach(r=>{r.stage=value;}); };
   let message='';
   switch(event.type){
-    case 'activity': {const robot=next.robots.find(r=>r.id===event.entityId);if(robot&&isWorkflowStage(p.stage)&&typeof p.issueId==='string'&&next.issues.some(i=>i.id===p.issueId)&&typeof p.activityId==='string'){robot.stage=p.stage;robot.issueId=p.issueId;robot.activityId=p.activityId;message=`${robot.name}: ${robot.activityId} → ${robot.stage}`;}} break;
+    case 'activity': {const robot=next.robots.find(r=>r.id===event.entityId);if(robot&&isWorkflowStage(p.stage)&&typeof p.issueId==='string'&&next.issues.some(i=>i.id===p.issueId)&&typeof p.activityId==='string'){robot.stage=next.holds.some(h=>h.issueId===p.issueId&&!h.resolved)?'hold':p.stage;robot.issueId=p.issueId;robot.activityId=p.activityId;message=`${robot.name}: ${robot.activityId} → ${robot.stage}`;}} break;
     case 'stage': if(isWorkflowStage(p.stage)){stage(event.entityId,p.stage);message=`${event.entityId} → ${p.stage}`;} break;
     case 'head': if(pr&&!pr.merged&&typeof p.head==='string'&&p.head!==pr.head){pr.head=p.head;stage(pr.issueId,'build');message=`${pr.title}: new head ${pr.head}; fresh review and QA required.`;} break;
     case 'review': if(pr&&typeof p.head==='string'&&typeof p.approved==='boolean'){pr.reviews[p.head]=p.approved?'approved':'changes_requested';if(p.head===pr.head&&!pr.merged)stage(pr.issueId,p.approved?'qa':'repair');message=`${pr.title}: ${p.approved?'approved':'changes requested'} on ${p.head}${p.head!==pr.head?' (historical head)':''}.`;} break;
@@ -39,6 +39,7 @@ export function reduceEvent(state:GameState,event:EvidenceEvent):GameState {
     case 'hold': {const hold=next.holds.find(h=>h.id===event.entityId);if(hold&&typeof p.resolved==='boolean'){hold.resolved=p.resolved;stage(hold.issueId,p.resolved?'review':'hold');message=`${hold.title}: ${p.resolved?'decision recorded':'needs you'}.`;}} break;
     case 'pause': if(typeof p.requested==='boolean'){next.requestedPause=p.requested;message=`Dispatch ${p.requested?'pause':'resume'} requested.`;} if(typeof p.effective==='boolean'&&p.effective===next.requestedPause){next.paused=p.effective;message=`Simulated executor confirmed dispatch ${p.effective?'paused':'resumed'}.`;} break;
   }
+  if(message)next.logCount++;
   if(message)next.log=[`[fixture · ${event.id}] ${message}`,...next.log].slice(0,100);
   return next;
 }

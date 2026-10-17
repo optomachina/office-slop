@@ -5,7 +5,7 @@ export interface PullRequest { id:string; issueId:string; title:string; head:str
 export interface Robot { id:string; name:string; role:string; provider:string; activityId:string; issueId:string; stage:Stage; color:string; }
 export interface Provider { id:string; name:string; level:number|null; state:QuotaState; reset:string; reason:string; }
 export interface Hold { id:string; issueId:string; title:string; detail:string; resolved:boolean; }
-export interface GameState { tick:number; seen:string[]; issues:WorkItem[]; prs:PullRequest[]; robots:Robot[]; providers:Provider[]; holds:Hold[]; connected:boolean; paused:boolean; requestedPause:boolean; log:string[]; }
+export interface GameState { tick:number; seen:string[]; issues:WorkItem[]; prs:PullRequest[]; robots:Robot[]; providers:Provider[]; holds:Hold[]; connected:boolean; paused:boolean; requestedPause:boolean; log:string[]; logCount:number; }
 export interface EvidenceEvent { id:string; at:number; source:'fixture'; type:'stage'|'head'|'review'|'qa'|'merge'|'quota'|'connection'|'hold'|'pause'|'activity'; entityId:string; payload:Record<string,string|number|boolean|null>; }
 export interface Scenario { id:string; name:string; description:string; events:EvidenceEvent[]; }
 export interface IdeaBrief { name:string; idea:string; customer:string; outcome:string; }

@@ -8,6 +8,7 @@ import App from '../shell/App';
 import officeStyles from '../shell/styles.css?raw';
 import { sceneLabels } from '../scene/layout';
 import { selectScene } from '../scene/selectors';
+import { sceneLoader } from '../shell/sceneLoader';
 
 vi.mock('../scene/OfficeScene', () => ({ default: ({ state, reducedMotion, onSelect }: SceneProps) =>
   <div aria-label="Office scene">{sceneLabels(selectScene(state).stations, state.providers).filter(label => label.id.startsWith('station:')).map(label => <button key={label.id} onClick={() => onSelect(label.id)}>{label.text}</button>)}{reducedMotion ? 'Scene motion reduced' : 'Scene motion enabled'}<button onClick={() => onSelect('robot-moss')}>Scene robot</button><button onClick={() => onSelect('issue-onboarding')}>Scene card</button><button onClick={() => onSelect('dispatch')}>Scene dispatch</button><button onClick={() => onSelect('station:build')}>Scene station</button></div>,
@@ -322,4 +323,26 @@ it('stacks mobile attention, directory and usable replay after the two-column ta
  expect(mobile).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
  expect(mobile).toContain('grid-row: 4; min-height: auto; overflow: visible');
  expect(mobile).toContain('.screen-office .replay-bar { grid-row: 5; }');
+});
+
+it('shows a retryable fallback when the office scene chunk fails and keeps the rest of the office usable', async () => {
+ const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+ const error=vi.spyOn(console,'error').mockImplementation(()=>{});
+ const load=vi.spyOn(sceneLoader,'load').mockRejectedValueOnce(new Error('Failed to fetch dynamically imported module'));
+ try {
+  const user=await enter();
+  const alert=await screen.findByRole('alert');
+  expect(within(alert).getByText('The office floor could not load.')).toBeTruthy();
+  expect(screen.queryByLabelText('Office scene')).toBeNull();
+  expect(within(screen.getByRole('region',{name:'Simulated provider capacity'})).getAllByRole('button')).toHaveLength(4);
+  const launcher=screen.getByRole('button',{name:/^Needs you \d/});
+  await user.click(launcher);
+  await user.click(screen.getByRole('button',{name:/Inspect related work/}));
+  await user.keyboard('{Escape}');
+  expect(screen.getByRole('button',{name:'Play replay'})).toBeTruthy();
+  await user.click(within(alert).getByRole('button',{name:'Retry loading office'}));
+  expect(await screen.findByLabelText('Office scene')).toBeTruthy();
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(load).toHaveBeenCalledTimes(2);
+ } finally { load.mockRestore(); warn.mockRestore(); error.mockRestore(); }
 });

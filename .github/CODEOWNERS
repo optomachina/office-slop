@@ -1,0 +1,42 @@
+# Managed by the pstack template. Edit only inside project:begin/end blocks.
+#
+# Owners of the gate: the workflows that run it, the scripts that apply it, the
+# configs they read, and the contract that defines it (the governance part of
+# the infra_ci class in docs/sensitive-paths.json).
+#
+# A pull_request workflow runs the YAML from the PR itself, so these entries are
+# what stop a PR from rewriting its own gate. They only bind once branch
+# protection on the default branch has "Require review from Code Owners" on
+# (docs/runbooks/branch-protection.md). @optomachina is filled by
+# scripts/sync-template.mjs from pstack.config.json project.ownerHandle.
+# The last matching line wins, so a project entry below that also matches one
+# of these paths replaces its owners: keep project entries off them.
+
+/.github/workflows/                 @optomachina
+/.github/actions/                   @optomachina
+/templates/.github/                 @optomachina
+/.github/CODEOWNERS                 @optomachina
+/.github/pull_request_template.md   @optomachina
+/docs/sensitive-paths.json          @optomachina
+/pstack.config.json                 @optomachina
+/AGENTS.md                          @optomachina
+/CLAUDE.md                          @optomachina
+/.pstack-template-version           @optomachina
+/scripts/lib/                       @optomachina
+/scripts/fixtures/sensitive-paths/  @optomachina
+/scripts/fixtures/pstack-config/    @optomachina
+/scripts/sensitive-paths*           @optomachina
+/scripts/review-gate*               @optomachina
+/scripts/jev-client*                @optomachina
+/scripts/check-journey-tests*       @optomachina
+/scripts/check-pr-body*             @optomachina
+/scripts/validate-agent-contract*   @optomachina
+/scripts/preflight*                 @optomachina
+/scripts/sync-template*             @optomachina
+/scripts/gate-workflows*            @optomachina
+/scripts/deploy*                    @optomachina
+/scripts/release*                   @optomachina
+
+# <!-- project:begin codeowners -->
+# Project-specific owners go here.
+# <!-- project:end codeowners -->

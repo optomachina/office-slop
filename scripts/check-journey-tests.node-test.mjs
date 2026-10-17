@@ -10,8 +10,7 @@ import { checkJourneyTests, findWaiver, main } from "./check-journey-tests.mjs";
 import { parsePstackConfig } from "./lib/pstack-config.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
-// TODO(pstack-template): upstream should ship this fixture; the template tests read the repo's
-// pstack.config.json, which assumes template-default globs and fails once a project adapts it.
+// The template's own journey globs (a fixture), so a project's edits to its pstack.config.json cannot break these tests.
 const configText = readFileSync(join(repoRoot, "scripts/fixtures/pstack-config/template.json"), "utf8");
 const config = parsePstackConfig(configText);
 const changes = (...files) => files.map((file) => (typeof file === "string" ? { status: "M", file } : file));
@@ -124,5 +123,15 @@ describe("journey-test CLI", () => {
     assert.equal(main(["--root", dir, "--changed-files-from", "changed.txt", "--base-ref", "HEAD^1"], { stdout: () => {}, env: {} }), 1, "base copy still applies");
     const proc = spawnSync(process.execPath, [join(repoRoot, "scripts/check-journey-tests.mjs"), "--root", dir, "--changed-files-from", "changed.txt", "--base-ref", "no-such-ref"], { encoding: "utf8" });
     assert.equal(proc.status, 2);
+  });
+});
+
+describe("pstack config", () => {
+  it("accepts an @user or @org/team ownerHandle, or the placeholder, and rejects anything else", () => {
+    const withHandle = (ownerHandle) => parsePstackConfig({ ...JSON.parse(configText), project: { ...config.project, ownerHandle } });
+    assert.equal(withHandle("@optomachina").project.ownerHandle, "@optomachina");
+    assert.equal(withHandle("@acme/platform").project.ownerHandle, "@acme/platform");
+    assert.equal(withHandle("{{OWNER_HANDLE}}").project.ownerHandle, "{{OWNER_HANDLE}}");
+    for (const bad of ["optomachina", "@", "@a b", 7]) assert.throws(() => withHandle(bad), /ownerHandle/);
   });
 });

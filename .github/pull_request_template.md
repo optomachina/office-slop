@@ -47,7 +47,7 @@ Review tier:
 
 ## Sensitive classes
 
-<!-- From the review gate / sensitive-paths report: "none" or a comma list (schema, migrations, auth, payments, integrations, secrets, infra_ci, deps). Gate loosening (removing or narrowing a sensitive glob, editing gate code) needs owner approval plus an Opus review. -->
+<!-- From the review gate / sensitive-paths report: "none" or a comma list (schema, migrations, auth, payments, integrations, secrets, infra_ci, deps, public_exposure). Gate loosening (removing or narrowing a sensitive glob, editing gate code) needs owner approval plus an Opus review. -->
 
 Sensitive classes:
 

@@ -1,0 +1,10 @@
+{
+  "entities": {
+    "github|synthetic-org|review|rev-9": { "kind": "review", "sourceVersion": "2026-10-02T09:00:00Z", "eventId": "d-1", "headSha": "bbbbbbb", "visibility": "public" },
+    "linear|synthetic-ws|issue|iss-1": { "kind": "stage", "sourceVersion": "2026-10-02T08:00:00Z", "eventId": "d-2", "headSha": null, "visibility": "private" }
+  },
+  "accepted": 2,
+  "duplicates": 3,
+  "stale": 0,
+  "warnings": []
+}

@@ -1,0 +1,11 @@
+{
+  "entities": {
+    "github|synthetic-org|check|chk-11": { "kind": "check", "sourceVersion": "2", "eventId": "o-4", "headSha": "cccc222", "visibility": "public" },
+    "github|synthetic-org|head|pr-11": { "kind": "head", "sourceVersion": "2026-10-03T12:00:00Z", "eventId": "o-2", "headSha": "cccc222", "visibility": "public" },
+    "linear|synthetic-ws|issue|iss-2": { "kind": "stage", "sourceVersion": "2026-10-03T10:00:00Z", "eventId": "o-5", "headSha": null, "visibility": "private" }
+  },
+  "accepted": 7,
+  "duplicates": 0,
+  "stale": 3,
+  "warnings": ["kept: unknown event kind (o-7)"]
+}

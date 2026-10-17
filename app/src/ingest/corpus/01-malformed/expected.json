@@ -1,0 +1,18 @@
+{
+  "entities": {
+    "github|synthetic-org|check|chk-55": { "kind": "check", "sourceVersion": "1", "eventId": "m-3", "headSha": "aaaaaaa", "visibility": "public" },
+    "github|synthetic-org|head|pr-7": { "kind": "head", "sourceVersion": "2026-10-01T10:00:00Z", "eventId": "m-1", "headSha": "aaaaaaa", "visibility": "public" }
+  },
+  "accepted": 2,
+  "duplicates": 0,
+  "stale": 0,
+  "warnings": [
+    "rejected: bad headSha",
+    "rejected: invalid JSON",
+    "rejected: invalid JSON",
+    "rejected: missing or unknown entity",
+    "rejected: not an object",
+    "rejected: scope.repoId must be an integer id",
+    "rejected: unsupported schema version"
+  ]
+}

@@ -5,6 +5,7 @@ export function createInitialState():GameState {
   return {
     tick:0,seen:[],connected:true,paused:false,requestedPause:false,
     issues:[
+      {id:'issue-history',title:'Historical: Office Slop architecture consultation',stage:'planning',prIds:[],provenance:'Imported from planning/opus-development-plan.md; Claude consultation observed October 16, 2026. Recorded recommendation only; no runtime activity or owner hold inferred.'},
       {id:'issue-billing',title:'Connect the revenue scoreboard',stage:'qa',prIds:['pr-billing-api','pr-billing-ui']},
       {id:'issue-onboarding',title:'Turn a spark into a product brief',stage:'build',prIds:['pr-onboarding']},
       {id:'issue-office',title:'Give every robot a clear route',stage:'review',prIds:['pr-office']},
@@ -26,7 +27,7 @@ export function createInitialState():GameState {
       {id:'robot-bolt',name:'Bolt',role:'Builder',provider:'Claude',activityId:'run-bolt-1',issueId:'issue-sharing',stage:'hold',color:'#e9c96e'},
       {id:'robot-moss',name:'Moss',role:'Reviewer',provider:'Claude',activityId:'run-moss-1',issueId:'issue-onboarding',stage:'review',color:'#9bc28c'},
     ],
-    providers:[{id:'claude',name:'Claude',level:0.75,state:'ok',reset:'Demo · resets in 2h 14m'},{id:'codex',name:'Codex',level:0.62,state:'ok',reset:'Demo · resets in 4h 02m'},{id:'jev',name:'Jev',level:null,state:'unknown',reset:'Demo · usage source unavailable'}],
+    providers:[{id:'claude',name:'Claude',level:0.75,state:'ok',reason:'Synthetic window observed',reset:'Demo · resets in 2h 14m'},{id:'codex',name:'Codex',level:0.62,state:'ok',reason:'Synthetic window observed',reset:'Demo · resets in 4h 02m'},{id:'grok',name:'Grok',level:null,state:'unknown',reason:'No simulated reading available',reset:'Demo · unknown window'},{id:'cursor',name:'Cursor',level:0.4,state:'stale',reason:'Last simulated observation expired',reset:'Demo · last known window'}],
     holds:[{id:'hold-sharing',issueId:'issue-sharing',title:'Choose the public showcase',detail:'Allow this demo factory to share its office layout? Revenue and source code stay private.',resolved:false}],
     log:['SIMULATION — every robot, PR, quota and revenue value is a fixture.','Billing: 1 of 2 linked PRs merged; UI check failed.','Sharing: a product decision needs you.'],
   };

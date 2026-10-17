@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import OfficeScene from "../scene/OfficeScene";
-import { createInitialState, reduceEvent, scenarios } from "../domain";
+import { createInitialState, reduceEvent, scenarios, issueProgress, setPause, resolveHold } from "../domain";
 import type { GameState, IdeaBrief, Options } from "../contracts";
 import "./styles.css";
 import {
@@ -42,7 +42,8 @@ export default function App() {
     [scenarioId, setScenarioId] = useState(""),
     [cursor, setCursor] = useState(0),
     [playing, setPlaying] = useState(false),
-    [limit, setLimit] = useState("25");
+    [limit, setLimit] = useState("25"),
+    [manualPause, setManualPause] = useState<boolean | null>(null);
   const sceneScenario =
     scenarios.find((s) => s.id === scenarioId) || scenarios[0];
   const returnFocus = useRef<HTMLElement | null>(null),
@@ -78,6 +79,19 @@ export default function App() {
     }, 1600);
     return () => clearTimeout(t);
   }, [playing, sceneScenario, cursor]);
+  useEffect(() => {
+    if (screen !== "office" || manualPause === null) return;
+    const desired = manualPause;
+    const timer = window.setTimeout(() => {
+      setState((s) => reduceEvent(s, {
+        id: `manual-effective-${s.seen.length}`,
+        at: s.tick + 1, source: "fixture", type: "pause", entityId: "dispatch",
+        payload: { effective: desired },
+      }));
+      setManualPause(null);
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [screen, manualPause, scenarioId]);
   useEffect(() => {
     if (!reveal) return;
     const t = setTimeout(
@@ -160,6 +174,7 @@ export default function App() {
     setOptions((o) => ({ ...o, muted: !o.muted }));
   }
   function reset(id = sceneScenario?.id) {
+    setManualPause(null);
     setPlaying(false);
     setCursor(0);
     setState(createInitialState());
@@ -180,6 +195,7 @@ export default function App() {
       state.issues.find(
         (i) => i.id === state.prs.find((p) => p.id === selected)?.issueId,
       ),
+    stuck = state.issues.filter((i) => holds.some((h) => h.issueId === i.id) || state.prs.some((p) => p.issueId === i.id && !p.merged && (p.reviews[p.head] === "changes_requested" || p.qa[p.head] === false))),
     provider = state.providers.find((p) => p.id === selected),
     robot = state.robots.find((r) => r.id === selected),
     prs = issue ? state.prs.filter((p) => issue.prIds.includes(p.id)) : [];
@@ -329,8 +345,9 @@ export default function App() {
             )}
             <aside className="note">
               Demo rehearsal: your brief stays in this browser. The office uses
-              synthetic work; no repository or agents are created.
+              synthetic work. Repository creation is unavailable; no repository or agents are created.
             </aside>
+            <button type="button" onClick={() => enter(true)}>Skip</button>
             <button className="primary" type="submit">
               Save brief & enter office ↗
             </button>
@@ -365,9 +382,9 @@ export default function App() {
             <div className="header-actions">
               <button
                 onClick={() => open("needs")}
-                className={holds.length ? "needs" : ""}
+                className={stuck.length ? "needs" : ""}
               >
-                Needs you <b>{holds.length}</b>
+                Needs you <b>{stuck.length}</b>
               </button>
               <button
                 onClick={() => open("leaderboard")}
@@ -393,7 +410,18 @@ export default function App() {
             <h2>Ideas in. Possibilities out.</h2>
             <p>Pick a robot or folder to see the work behind it.</p>
           </section>
-          <details className="work-list">
+          <section className="capacity-toolbar" aria-label="Simulated provider capacity">
+            {state.providers.map((p) => <button key={p.id} className={`capacity-tank ${p.state}`} onClick={() => select(p.id)} aria-label={`${p.name} capacity: ${p.state === "ok" ? "known" : p.state}. ${p.reason}`}>
+              <span className="tank-glass" aria-hidden="true"><span className="tank-liquid" style={{ height: `${(p.level ?? 0) * 100}%` }} /></span>
+              <span><strong>{p.name}</strong><small>{p.state === "ok" ? "known" : p.state}{p.level !== null ? ` · ${Math.round(p.level * 100)}%` : ""}</small><small>{p.reason}</small></span>
+            </button>)}
+          </section>
+          <div className="work-panels">
+          <details className="work-list" open>
+            <summary>Needs You <span>{stuck.length} stuck issues</span></summary>
+            <div>{stuck.length ? stuck.map((i) => <button key={i.id} onClick={() => select(i.id)}><span>Jump to blocker: {i.title}</span><small>{holds.some((h) => h.issueId === i.id) ? "Owner hold" : "Changes requested or failed check"}</small></button>) : <p>No stuck work. Play a story to explore.</p>}</div>
+          </details>
+          <details className="work-list directory">
             <summary>
               Work directory <span>{state.issues.length} issues</span>
             </summary>
@@ -402,18 +430,14 @@ export default function App() {
                 <button key={i.id} onClick={() => select(i.id)}>
                   <span>{i.title}</span>
                   <small>
-                    {i.stage} ·{" "}
-                    {
-                      i.prIds.filter(
-                        (id) => state.prs.find((p) => p.id === id)?.merged,
-                      ).length
-                    }
-                    /{i.prIds.length} PRs merged
+                    {i.stage} · {issueProgress(state, i.id)}
                   </small>
                 </button>
               ))}
+              {state.robots.map((r) => <button key={r.id} onClick={() => select(r.id)}><span>{r.name}</span><small>{r.role} · {r.stage}</small></button>)}
             </div>
           </details>
+          </div>
           <footer className="replay-bar">
             <div className="replay-select">
               <label htmlFor="scenario">DEMO STORY</label>
@@ -462,45 +486,19 @@ export default function App() {
             </div>
             <button
               className="lever"
-              onClick={() => {
-                const desired = !state.requestedPause;
-                setState((s) =>
-                  reduceEvent(s, {
-                    id: `manual-request-${Date.now()}`,
-                    at: s.tick + 1,
-                    source: "fixture",
-                    type: "pause",
-                    entityId: "dispatch",
-                    payload: { requested: desired },
-                  }),
-                );
-                setTimeout(
-                  () =>
-                    setState((s) =>
-                      reduceEvent(s, {
-                        id: `manual-effective-${Date.now()}`,
-                        at: s.tick + 1,
-                        source: "fixture",
-                        type: "pause",
-                        entityId: "dispatch",
-                        payload: { effective: desired },
-                      }),
-                    ),
-                  700,
-                );
-              }}
+              aria-label="Pause new launches"
+              aria-pressed={state.requestedPause}
+              onClick={() => { const desired = !state.requestedPause; setState((s) => setPause(s, desired)); setManualPause(desired); }}
             >
               <span
                 className={
                   state.paused ? "lever-indicator off" : "lever-indicator"
                 }
               />
-              {state.requestedPause !== state.paused
-                ? "Switch pending…"
-                : state.paused
-                  ? "Resume new work"
-                  : "Pause new work"}
-              <small>SIMULATED DISPATCH</small>
+              Pause new launches
+              <small>Requested: {state.requestedPause ? "paused" : "running"}</small>
+              <small>Effective: {state.paused ? "paused" : "running"}</small>
+              <small>Running work continues.</small>
             </button>
           </footer>
           {reveal && (
@@ -665,9 +663,9 @@ export default function App() {
               <>
                 <p className="eyebrow">THE CREW NEEDS A HAND</p>
                 <h2>
-                  Needs you <span>{holds.length}</span>
+                  Needs you <span>{stuck.length}</span>
                 </h2>
-                <p>Only decisions worth interrupting your day.</p>
+                <p>Owner holds, failed checks, and changes requested.</p>
                 {holds.length ? (
                   holds.map((h) => (
                     <article className="hold" key={h.id}>
@@ -677,14 +675,7 @@ export default function App() {
                         className="primary"
                         onClick={() =>
                           setState((s) =>
-                            reduceEvent(s, {
-                              id: `manual-hold-${Date.now()}`,
-                              at: s.tick + 1,
-                              type: "hold",
-                              source: "fixture",
-                              entityId: h.id,
-                              payload: { resolved: true },
-                            }),
+                            resolveHold(s, h.id),
                           )
                         }
                       >
@@ -700,9 +691,10 @@ export default function App() {
                   ))
                 ) : (
                   <aside className="note">
-                    Nothing waiting on you. The little crew has it from here.
+                    No owner decisions waiting.
                   </aside>
                 )}
+                {stuck.filter((i) => !holds.some((h) => h.issueId === i.id)).map((i) => <article className="hold" key={i.id}><h3>{i.title}</h3><p>Changes requested or failed check</p><button onClick={() => select(i.id)}>Jump to blocker</button></article>)}
                 <h3>Since this session began</h3>
                 <ul className="digest">
                   {state.log.length ? (
@@ -737,12 +729,9 @@ export default function App() {
                   <>
                     <span className="stage-label">{issue.stage}</span>
                     <p>{issue.title}</p>
+                    {issue.provenance && <p className="note">Historical imported story · Provenance: {issue.provenance}</p>}
                     <div className="note">
-                      {prs.filter((p) => p.merged).length} of {prs.length}{" "}
-                      linked PRs merged
-                      {prs.length > 1 && prs.some((p) => !p.merged)
-                        ? " — this issue is not complete."
-                        : ""}
+                      {issueProgress(state, issue.id)}
                     </div>
                     {prs.map((p) => (
                       <article className="pr-evidence" key={p.id}>
@@ -779,6 +768,7 @@ export default function App() {
                         ? "Unknown capacity"
                         : `${Math.round(provider.level * 100)}% remaining`}
                     </h3>
+                    <p>{provider.reason}</p>
                     <p>Reset: {provider.reset}</p>
                     <aside className="note">
                       Source: synthetic provider window. This is not your

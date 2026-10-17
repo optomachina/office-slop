@@ -349,6 +349,14 @@
       "class": "secrets"
     },
     {
+      "glob": "**/*env*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/.dev.vars*",
+      "class": "secrets"
+    },
+    {
       "glob": "server/**/*auth*{,/**}",
       "class": "auth"
     },
@@ -402,6 +410,10 @@
     },
     {
       "glob": "app/src/ingest/corpus/**/expected.json",
+      "class": "infra_ci"
+    },
+    {
+      "glob": "app/src/ingest/corpus/**",
       "class": "infra_ci"
     }
   ]

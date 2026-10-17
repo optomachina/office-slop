@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { askJev, gatedChoice, isJevConfigured, jevConfig, NOT_CONFIGURED, sanitizeToken } from "./jev-client.mjs";
 import { parsePstackConfig } from "./lib/pstack-config.mjs";
-import { SENSITIVE_PATHS_FILE, loadSensitivePaths } from "./lib/sensitive-paths.mjs";
+import { SENSITIVE_PATHS_FILE, globMatcher, loadSensitivePaths } from "./lib/sensitive-paths.mjs";
 import { categorize, countChangedLines, decide, finalTier, main, parseArgs, runReviewGate, SCREEN_QUESTIONS } from "./review-gate.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -183,9 +183,9 @@ describe("CLI and base ref", () => {
     writeFileSync(join(dir, "pstack.config.json"), pstackText);
     git(dir, "add", "-A");
     git(dir, "commit", "-qm", "base");
-    // The head removes the .env glob and adds .env to the docs category.
+    // The head removes every glob that matches .env.local (not just **/.env*).
     const list = JSON.parse(readFileSync(join(repoRoot, SENSITIVE_PATHS_FILE), "utf8"));
-    list.globs = list.globs.filter((entry) => entry.glob !== "**/.env*");
+    list.globs = list.globs.filter((entry) => !globMatcher([entry.glob])(".env.local"));
     writeFileSync(join(dir, SENSITIVE_PATHS_FILE), JSON.stringify(list));
     git(dir, "add", "-A");
     git(dir, "commit", "-qm", "head");

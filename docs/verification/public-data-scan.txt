@@ -13,6 +13,10 @@
 #   references/jev-smoke.json:1: personal path
 #   references/pstack-research.md:5: personal path
 #   references/overdrafter-graph-draft.3.yaml:214: machine host path
+#   planning/current-plan.md:119: private parent-thread id (follow-up)
+#   references/inspection.md:10-11: private asset and execution ids (follow-up)
+#   references/pstack-research.md:7: absolute path on another machine (follow-up)
+#   planning/page-link.json: access permissions restored to booleans; sources emptied
 #
 # Remaining (intentional or synthetic):
 AGENTS.md:18: named owner

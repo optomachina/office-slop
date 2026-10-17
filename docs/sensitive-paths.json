@@ -33,6 +33,10 @@
     "deps": {
       "label": "Dependencies",
       "description": "package manifests and lockfiles"
+    },
+    "public_exposure": {
+      "label": "Public exposure of external data",
+      "description": "sanitizers, URL allow-lists and render paths that show third-party (GitHub/Linear) text in the UI, where unsanitized or private data could reach a public viewer"
     }
   },
   "globs": [
@@ -294,6 +298,122 @@
     },
     {
       "glob": "scripts/gate-workflows*",
+      "class": "infra_ci"
+    },
+    {
+      "glob": "server/**",
+      "class": "integrations"
+    },
+    {
+      "glob": "app/src/ingest/adapters/**",
+      "class": "integrations"
+    },
+    {
+      "glob": "server/config*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/*{-,_}env{,.*,-*,_*}{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/env{-,_,.}*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/env{,s}/**",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/*{load,read,parse,get}{-,_,}env*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/*environment*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/*token*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/*github-app*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/*private-key*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/*app-key*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/*env*{,/**}",
+      "class": "secrets"
+    },
+    {
+      "glob": "**/.dev.vars*",
+      "class": "secrets"
+    },
+    {
+      "glob": "server/**/*auth*{,/**}",
+      "class": "auth"
+    },
+    {
+      "glob": "server/**/*origin*{,/**}",
+      "class": "auth"
+    },
+    {
+      "glob": "server/**/*cors*{,/**}",
+      "class": "auth"
+    },
+    {
+      "glob": "server/**/*{sse,snapshot,stream}*{,/**}",
+      "class": "auth"
+    },
+    {
+      "glob": "app/src/ingest/sanitize*{,/**}",
+      "class": "public_exposure"
+    },
+    {
+      "glob": "app/src/**/*{sanitiz,allowlist,allow-list}*{,/**}",
+      "class": "public_exposure"
+    },
+    {
+      "glob": "app/src/**/*external-text*{,/**}",
+      "class": "public_exposure"
+    },
+    {
+      "glob": "app/src/**/*inspector*{,/**}",
+      "class": "public_exposure"
+    },
+    {
+      "glob": "app/src/ingest/render*{,/**}",
+      "class": "public_exposure"
+    },
+    {
+      "glob": "**/{wrangler.toml,render.yaml,railway.json,railway.toml,app.yaml,Procfile}",
+      "class": "infra_ci"
+    },
+    {
+      "glob": "**/{.vercel,netlify,.netlify}/**",
+      "class": "infra_ci"
+    },
+    {
+      "glob": "**/*.{service,plist}",
+      "class": "infra_ci"
+    },
+    {
+      "glob": "server/**/*{deploy,hosting}*{,/**}",
+      "class": "infra_ci"
+    },
+    {
+      "glob": "app/src/ingest/corpus/**/expected.json",
+      "class": "infra_ci"
+    },
+    {
+      "glob": "app/src/ingest/corpus/**",
       "class": "infra_ci"
     }
   ]

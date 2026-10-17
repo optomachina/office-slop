@@ -41,6 +41,7 @@ import {
   triageRoute,
   unquoteGitPath,
 } from "./sensitive-paths.mjs";
+import { checkPrBody } from "../check-pr-body.mjs";
 import { decide } from "../review-gate.mjs";
 import { isTemplateConfig, loadPstackConfig } from "./pstack-config.mjs";
 
@@ -466,5 +467,45 @@ describe("gate loosening", () => {
     assert.equal(main(["report"], { stdout: () => {}, stderr: (line) => errors.push(line) }), 2);
     assert.equal(main(["nope"], { stdout: () => {}, stderr: (line) => errors.push(line) }), 2);
     assert.equal(errors.length, 2);
+  });
+});
+
+describe("Slop Farm Milestone B globs", () => {
+  const expected = {
+    "server/index.ts": ["integrations"],
+    "server/config.ts": ["integrations", "secrets"],
+    "server/http/origin.ts": ["auth", "integrations"],
+    "app/src/ingest/adapters/github.ts": ["integrations"],
+    "slopfarm-env": ["secrets"],
+    "prod.env": ["secrets"],
+    ".dev.vars": ["secrets"],
+    "app/src/ingest/sanitize.ts": ["public_exposure"],
+    "app/src/shell/Inspector.tsx": ["public_exposure"],
+    "app/src/ingest/corpus/x/expected.json": ["infra_ci"],
+    "app/src/ingest/corpus/x/input.jsonl": ["infra_ci"],
+    "fly.toml": ["infra_ci"],
+    "wrangler.toml": ["infra_ci"],
+    "app/src/ingest/contract.ts": [],
+    "app/src/shell/App.tsx": [],
+  };
+
+  it("classifies the project paths", () => {
+    const matcher = createMatcher(config);
+    for (const [path, classes] of Object.entries(expected)) {
+      const actual = matcher.classify(path);
+      for (const name of classes) assert.ok(actual.includes(name), `${path} should include ${name}, got ${actual.join(",") || "-"}`);
+      if (classes.length === 0) assert.deepEqual(actual, [], path);
+    }
+  });
+
+  it("routes a public_exposure change to opus, blocks auto-merge and needs the class in the PR body", () => {
+    const decision = decide({ files: ["app/src/ingest/sanitize.ts"], sensitivePaths: config, pstackConfig });
+    assert.deepEqual(decision.sensitive.classes, ["public_exposure"]);
+    assert.equal(decision.review_tier, "opus");
+    assert.equal(decision.auto_merge.eligible, false);
+    const body = (classes) => `preflight: typecheck PASS\nJourney test: N/A - matcher only\nReview tier: opus\nSensitive classes: ${classes}\n`;
+    assert.deepEqual(checkPrBody(body("public_exposure"), decision), []);
+    assert.ok(checkPrBody(body("none"), decision).some((problem) => /missing: public_exposure/.test(problem)));
+    assert.ok(checkPrBody(body("public_exposure").replace("Review tier: opus", "Review tier: sonnet"), decision).some((problem) => /must be opus/.test(problem)));
   });
 });

@@ -1,0 +1,1 @@
+{"observed":"2026-10-16","operation":"existing authorized synthetic worker-routing smoke","client":"/Users/blainewilson/Overdrafter/scripts/jev-client.mjs","requestedModel":"jev-1.13.0","ok":false,"reason":"http_403","latencyMs":273,"model":null,"usage":null,"credentialsChanged":false,"fallback":"deterministic fixtures and ordinary independent review"}

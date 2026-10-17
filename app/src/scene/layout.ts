@@ -43,14 +43,14 @@ export const wallHeight=(wall:typeof OfficeLayout.walls[number])=>
  (wall.from.y===0&&wall.to.y===0)||(wall.from.x===0&&wall.to.x===0)?70:15;
 export type LabelRectangle={id:string;text:string;x:number;y:number;width:number;height:number;size:number;color:number};
 export const rectanglesIntersect=(a:LabelRectangle,b:LabelRectangle)=>Math.abs(a.x-b.x)<(a.width+b.width)/2+4&&Math.abs(a.y-b.y)<(a.height+b.height)/2+4;
-/** Conservative text bounds; labels move upward only, remaining above monitors. */
+/** One compact name/count sign per station; conservative bounds keep signs apart. */
 export function sceneLabels(stationCounts:readonly {id:string;count:number;excess:number}[],providers:readonly {id:string;name:string}[]):LabelRectangle[]{
  const result:LabelRectangle[]=[];
  const add=(id:string,text:string,p:Point,size:number,color:number)=>{const rect={id,text,...p,width:text.length*(size+1),height:size+4,size,color};while(result.some(other=>rectanglesIntersect(rect,other)))rect.y-=18;result.push(rect);};
  for(const [i,provider] of providers.entries()){const p=iso(providerAnchors(providers.length)[i].x,8);add(`provider:${provider.id}`,provider.name.toUpperCase(),{x:p.x,y:p.y+29},9,0xd9e4d8);add(`level:${provider.id}`,'LAST KNOWN 100%',{x:p.x,y:p.y-90},8,colors.mint);}
- const lever=iso(dispatchAnchor.x,dispatchAnchor.y,15);add('dispatch','DISPATCH',{x:lever.x,y:lever.y+27},9,0xc9d5c7);
+ const lever=iso(dispatchAnchor.x,dispatchAnchor.y,15);add('dispatch','DISPATCH',{x:lever.x,y:lever.y+65},9,0xc9d5c7);
  const sign=iso(2,9.5);add('capacity','PROVIDER POWER',{x:sign.x,y:sign.y+34},11,0xb8ccc0);
- for(const station of OfficeLayout.stations.filter(s=>s.id!=='capacity')){const p=iso(station.x+.7,station.y-.15,110);const count=stationCounts.find(s=>s.id===station.id);if(count?.count)add(`count:${station.id}`,`${count.count} cards${count.excess?` · +${count.excess} grouped`:''}`,{x:p.x,y:p.y+18},10,0xb7c9c5);add(`station:${station.id}`,station.label,p,11,station.color);}
+ for(const station of OfficeLayout.stations.filter(s=>s.id!=='capacity')){const p=iso(station.x+.7,station.y-.15,110);const count=stationCounts.find(s=>s.id===station.id);add(`station:${station.id}`,`${station.label.replace(/^0\d /, '')}${count?.count ? ` · ${count.count}` : ''}`,p,10,station.color);}
  return result;
 }
 export function robotRoute(start:Point,target:Point){const path=gridPath(start,target);return {path,position:path.length?start:target};}

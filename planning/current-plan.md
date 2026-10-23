@@ -1,4 +1,4 @@
-# Office Slop — consolidated planning draft
+# Slop Farm — consolidated planning draft
 
 October 16, 2026. Revision 2 owner decisions supersede the original handoff; subsequent Claude findings are incorporated below. Candidate name only. All build packages are proposals, not authorized implementation or created issues/PRs.
 

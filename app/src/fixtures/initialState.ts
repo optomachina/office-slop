@@ -5,7 +5,7 @@ export function createInitialState():GameState {
   return {
     logCount:3,tick:0,seen:[],connected:true,paused:false,requestedPause:false,
     issues:[
-      {id:'issue-history',title:'Historical: Office Slop architecture consultation',stage:'planning',prIds:[],provenance:'Imported from planning/opus-development-plan.md; Claude consultation observed October 16, 2026. Recorded recommendation only; no runtime activity or owner hold inferred.'},
+      {id:'issue-history',title:'Historical: Slop Farm architecture consultation',stage:'planning',prIds:[],provenance:'Imported from planning/opus-development-plan.md; Claude consultation observed October 16, 2026. Recorded recommendation only; no runtime activity or owner hold inferred.'},
       {id:'issue-billing',title:'Connect the revenue scoreboard',stage:'qa',prIds:['pr-billing-api','pr-billing-ui']},
       {id:'issue-onboarding',title:'Turn a spark into a product brief',stage:'build',prIds:['pr-onboarding']},
       {id:'issue-office',title:'Give every robot a clear route',stage:'review',prIds:['pr-office']},

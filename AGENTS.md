@@ -1,6 +1,6 @@
-# Office Slop agent contract
+# Slop Farm agent contract
 
-This file governs agent execution in Office Slop. It is managed by the pstack template (`.pstack-template-version`); edit only between `project:begin` / `project:end` markers, or change the template and re-sync. Product intent lives in the project's product documents; procedures live in [docs/runbooks/](docs/runbooks/). Tool adapters (`CLAUDE.md`, skills, prompts) may point here but may not create competing policy.
+This file governs agent execution in Slop Farm. It is managed by the pstack template (`.pstack-template-version`); edit only between `project:begin` / `project:end` markers, or change the template and re-sync. Product intent lives in the project's product documents; procedures live in [docs/runbooks/](docs/runbooks/). Tool adapters (`CLAUDE.md`, skills, prompts) may point here but may not create competing policy.
 
 ## Read what the task needs
 
@@ -15,7 +15,7 @@ Use the narrowest applicable source and do not read the whole documentation stac
 
 ## Standing development authorization
 
-Blaine Wilson authorizes the recorded owner of each Office Slop work unit to continue reversible, scoped development without repeated approval. This covers inspection, isolated branches or worktrees, editing, local tests and fixtures, correction of relevant failures, commits, pushes, PR and issue maintenance, automated review response, and merge once current-head required checks and actionable review findings pass and the PR is either auto-merge eligible or approved by Blaine Wilson.
+Blaine Wilson authorizes the recorded owner of each Slop Farm work unit to continue reversible, scoped development without repeated approval. This covers inspection, isolated branches or worktrees, editing, local tests and fixtures, correction of relevant failures, commits, pushes, PR and issue maintenance, automated review response, and merge once current-head required checks and actionable review findings pass and the PR is either auto-merge eligible or approved by Blaine Wilson.
 
 The authorization survives goal continuation, corrected attempts, and recorded ownership transfers within the named objective. A failed check is evidence, not a revocation: diagnose and correct the bounded unit within the repair budget. Complexity alone never requires human approval; it changes decomposition and review depth.
 

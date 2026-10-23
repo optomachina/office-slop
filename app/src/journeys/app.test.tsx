@@ -6,10 +6,12 @@ import userEvent from '@testing-library/user-event';
 import type { SceneProps } from '../contracts';
 import App from '../shell/App';
 import officeStyles from '../shell/styles.css?raw';
+import indexHtml from '../../index.html?raw';
 import officeSceneSource from '../scene/OfficeScene.tsx?raw';
 import { sceneLabels } from '../scene/layout';
 import { selectScene } from '../scene/selectors';
 import { sceneLoader } from '../shell/sceneLoader';
+import { KEY, PREF, savedBrief, savedOptions } from '../shell/storage';
 
 vi.mock('../scene/OfficeScene', () => ({ default: ({ state, reducedMotion, onSelect }: SceneProps) =>
   <div aria-label="Office scene">{sceneLabels(selectScene(state).stations, state.providers).filter(label => label.id.startsWith('station:')).map(label => <button key={label.id} onClick={() => onSelect(label.id)}>{label.text}</button>)}{reducedMotion ? 'Scene motion reduced' : 'Scene motion enabled'}<button onClick={() => onSelect('robot-moss')}>Scene robot</button><button onClick={() => onSelect('issue-onboarding')}>Scene card</button><button onClick={() => onSelect('dispatch')}>Scene dispatch</button><button onClick={() => onSelect('station:build')}>Scene station</button></div>,
@@ -105,7 +107,7 @@ describe('Milestone A user journeys', () => {
   it('exposes historical provenance without inventing activity', async () => {
     const user = await enter();
     await user.click(screen.getByText(/Work directory/));
-    await user.click(screen.getByRole('button', { name: /Historical: Office Slop/ }));
+    await user.click(screen.getByRole('button', { name: /Historical: Slop Farm/ }));
     const dialog = screen.getByRole('dialog', { name: 'Work inspector' });
     expect(within(dialog).getByText(/Imported from planning\/opus-development-plan.md/)).toBeTruthy();
   });
@@ -373,4 +375,43 @@ it('offers Reload page when retrying the office scene fails again', async () => 
 
 it('draws a backing plate behind each station sign in the real Pixi scene', () => {
  expect(officeSceneSource).toMatch(/const plate=labelPlate\(spec,t\.width,t\.height\);if\(plate\)labels\.addChildAt\(new Graphics\(\)\.roundRect\(plate\.x,plate\.y,plate\.width,plate\.height/);
+});
+
+const legacyBrief={name:'Legacy factory',idea:'Legacy idea',customer:'Legacy customer',outcome:'Legacy outcome'};
+const currentBrief={name:'Current factory',idea:'Current idea',customer:'Current customer',outcome:'Current outcome'};
+
+it('shows the Slop Farm name on the main menu, footer and tab title, and restores a pre-rename save and options', async () => {
+ localStorage.setItem('office-slop-save-v1', JSON.stringify({version:1,brief:legacyBrief,context:{}}));
+ localStorage.setItem('office-slop-options-v1', JSON.stringify({version:1,options:{muted:true,volume:0.2,reducedMotion:true,autonomy:true,sharing:{revenue:'friends',layout:'private',code:'private'}}}));
+ expect(savedBrief()).toEqual(legacyBrief);
+ expect(savedOptions()).toMatchObject({reducedMotion:true,sharing:{revenue:'friends',layout:'private',code:'private'}});
+ const {container}=render(<App />);
+ expect(screen.getByRole('heading', {level:1}).textContent).toBe('SLOPFARM');
+ expect(screen.getByText('SLOP FARM / 001')).toBeTruthy();
+ expect(screen.queryByText(/office slop/i)).toBeNull();
+ const user=userEvent.setup();
+ await user.click(screen.getByRole('button', {name:/Continue.*Saved factory/}));
+ const skip=screen.queryByRole('button', {name:'Skip reveal'});
+ if (skip) await user.click(skip);
+ expect(screen.getByText('Legacy factory')).toBeTruthy();
+ expect(container.querySelector('.game-app')!.classList.contains('reduced-motion')).toBe(true);
+});
+
+it('prefers the slop-farm save and options over pre-rename keys when both exist', async () => {
+ localStorage.setItem('office-slop-save-v1', JSON.stringify({version:1,brief:legacyBrief,context:{}}));
+ localStorage.setItem('office-slop-options-v1', JSON.stringify({version:1,options:{reducedMotion:true}}));
+ localStorage.setItem(KEY, JSON.stringify({version:1,brief:currentBrief,context:{}}));
+ localStorage.setItem(PREF, JSON.stringify({version:1,options:{reducedMotion:false}}));
+ expect(KEY).toBe('slop-farm-save-v1');
+ expect(PREF).toBe('slop-farm-options-v1');
+ expect(savedBrief()).toEqual(currentBrief);
+ expect(savedOptions().reducedMotion).toBe(false);
+ await enter();
+ expect(screen.getByText('Current factory')).toBeTruthy();
+ expect(screen.queryByText('Legacy factory')).toBeNull();
+});
+
+it('names the app Slop Farm in the HTML title', () => {
+ expect(indexHtml).toContain('<title>Slop Farm — Your little code factory</title>');
+ expect(indexHtml).not.toMatch(/office slop/i);
 });

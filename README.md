@@ -1,6 +1,6 @@
-# Office Slop planning workspace
+# Slop Farm planning workspace
 
-Planning only. Office Slop is a candidate name; availability is unchecked.
+Planning only. Slop Farm is the project name; availability is unchecked.
 Main conversation coordinates; this local MacBook thread owns planning artifacts.
 No implementation, repository creation, credential changes, deployment, or session changes are authorized by the handoff.
 

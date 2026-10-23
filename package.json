@@ -1,8 +1,8 @@
 {
-  "name": "office-slop-repo",
+  "name": "slop-farm-repo",
   "version": "0.1.0",
   "private": true,
-  "description": "Office Slop repository tooling: pstack agent contract, gates and preflight. The app lives in app/.",
+  "description": "Slop Farm repository tooling: pstack agent contract, gates and preflight. The app lives in app/.",
   "type": "module",
   "engines": {
     "node": ">=20"

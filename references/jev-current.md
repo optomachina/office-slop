@@ -1,4 +1,4 @@
-# Jev research for Office Slop
+# Jev research for Slop Farm
 
 Observed October 16, 2026. Research only; no application implementation, installation, credential changes, or paid calls performed.
 
@@ -20,7 +20,7 @@ New image understanding is relevant to UI assessment. Images can appear in state
 
 Public computer-use examples illustrate orchestration:
 
-- [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast): Jev selects a browser action and observed DOM target; a separate small LLM writes text. The runner performs and verifies actions. Canvas remains outside its documented MVP, so it cannot be assumed to test our isometric scene. Its speed claims are narrow demo measurements, not Office Slop benchmarks.
+- [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast): Jev selects a browser action and observed DOM target; a separate small LLM writes text. The runner performs and verifies actions. Canvas remains outside its documented MVP, so it cannot be assumed to test our isometric scene. Its speed claims are narrow demo measurements, not Slop Farm benchmarks.
 - [savka777/jev-use](https://github.com/savka777/jev-use): macOS Accessibility observations become bounded actions. Typed text comes from spans of the user's command; it does not freely generate code. This is a separate application requiring setup and permissions, not an automatically available Codex tool.
 
 ## X research status
@@ -59,7 +59,7 @@ Once the coordinator confirms the existing authorized TypeSafe environment or pr
 NODE_USE_ENV_PROXY=1 node --no-warnings <OverDrafter checkout>/scripts/jev-client.mjs --smoke
 ```
 
-This pins 1.13.0, sends a synthetic worker-routing question, and prints sanitized status, model, latency, tokens and answer. It neither changes repository files nor searches credential stores. Successful execution must precede any claim of live Jev readiness. The existing client permits a 1.14.0 model option for text comparisons; it does not currently expose image assets or experimental headers, so the Box path requires a separate reviewed integration. Keep credentials server-side and reuse the existing mechanism rather than copying it into Office Slop.
+This pins 1.13.0, sends a synthetic worker-routing question, and prints sanitized status, model, latency, tokens and answer. It neither changes repository files nor searches credential stores. Successful execution must precede any claim of live Jev readiness. The existing client permits a 1.14.0 model option for text comparisons; it does not currently expose image assets or experimental headers, so the Box path requires a separate reviewed integration. Keep credentials server-side and reuse the existing mechanism rather than copying it into Slop Farm.
 
 ## Source-level follow-up: composition APIs verified
 
@@ -73,7 +73,7 @@ Checked October 16, 2026 after the X demonstration. Public repository downloaded
 - `npm view @json-render/core version dist.tarball --json` returned **0.21.1**. Read-only inspection of the [official archive](https://registry.npmjs.org/@json-render/core/-/core-0.21.1.tgz) confirms both declarations and exports in `package/dist/index.d.ts`. Archive SHA-256: `cabbcdfc651f6509e7cc64fd57389663c60c3c77a38980fd645ee26de669566f`.
 - Availability discrepancy: the Jev guide and API docs still call the feature unreleased; the repository changelog assigns it to 0.21.0, and the published 0.21.1 archive contains it. The artifact settles export availability, not runtime compatibility or quality. Pin exact versions and validate locally before adoption.
 
-## Bounded Office Slop integration proposal
+## Bounded Slop Farm integration proposal
 
 **First use:** one optional adaptive onboarding panel, followed by the work inspector. Keep the main menu, office scene, Needs You indicator and core evidence rows fixed and accessible. Jev composes supporting components inside a bounded panel; it cannot hide mandatory decisions or alter work status.
 
